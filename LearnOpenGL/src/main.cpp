@@ -40,6 +40,7 @@ void OnWindowClose(GLFWwindow* window);
 //core
 void setGLFWEventCallbacks(GLFWwindow* window);
 void processInput(GLFWwindow* window);
+unsigned int createShaderProgram();
 
 //shader file handling
 std::string readShaderFile(const char* shaderSourcePath);
@@ -83,78 +84,9 @@ int main() {
 
 	//hookup event callbacks to the appropriate functions that we defined
 	setGLFWEventCallbacks(window);
-
-	//-----------------------------------------
-	//shader creation and compilation (can be abstracted into a helper function)
-	//-----------------------------------------
-	//----------vertex shader----------
-	//create a vertex shader object
-	unsigned int vertexShader; 
-	vertexShader = glCreateShader(GL_VERTEX_SHADER);
-
-	//set the shader's source code
-	std::string vertexShaderSource = readShaderFile(vertexSourcePath);
-	const char* vsrc = vertexShaderSource.c_str();
-	glShaderSource(vertexShader, 1, &vsrc, nullptr);
-
-	//compile the shader and check for compilation errors
-	glCompileShader(vertexShader);
-
-	int vCompileStatus;
-	char vInfoLog[MAX_INFO_SIZE];
-	glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &vCompileStatus);
-	if (vCompileStatus == GL_FALSE) {
-		glGetShaderInfoLog(vertexShader, MAX_INFO_SIZE, NULL, vInfoLog);
-		std::cout << "shader compilation error: " << vInfoLog << std::endl;
-		return -1;
-	}
-
-	//----------fragment shader----------
-	unsigned int fragShader;
-	fragShader = glCreateShader(GL_FRAGMENT_SHADER);
-
-	std::string fragShaderSource = readShaderFile(fragmentSourcePath);
-	const char* fsrc = fragShaderSource.c_str();
-	glShaderSource(fragShader, 1, &fsrc, nullptr);
-
-	glCompileShader(fragShader);
-
-	int fCompileStatus;
-	char fInfoLog[MAX_INFO_SIZE];
-	glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &fCompileStatus);
-	if (fCompileStatus == GL_FALSE) {
-		glGetShaderInfoLog(vertexShader, MAX_INFO_SIZE, NULL, fInfoLog);
-		std::cout << "shader compilation error: " << fInfoLog << std::endl;
-		return -1;
-	}
-
-	//-----------------------------------------
-	//shader program creation and linking
-	//-----------------------------------------
-	//create the shader program object
-	unsigned int shaderProgram;
-	shaderProgram = glCreateProgram();
-
-	//attach shaders and link them and check for linking errors
-	glAttachShader(shaderProgram, vertexShader);
-	glAttachShader(shaderProgram, fragShader);
-	glLinkProgram(shaderProgram);
-
-	int linkStatus;
-	char pInfoLog[MAX_INFO_SIZE];
-	glGetProgramiv(shaderProgram, GL_LINK_STATUS, &linkStatus);
-	if (linkStatus == GL_FALSE) {
-		glGetProgramInfoLog(shaderProgram, MAX_INFO_SIZE, nullptr, pInfoLog);
-		std::cerr << "program linking error: " << pInfoLog << std::endl;
-		return -1;
-	}
-
-	//activate the program
-	glUseProgram(shaderProgram);
-
-	//delete the shaders as they are no longer needed
-	glDeleteShader(vertexShader);
-	glDeleteShader(fragShader);
+	
+	//create the shader program that uses the vertex and fragment shaders in the shaders folder
+	unsigned int shaderProgram = createShaderProgram();
 
 	//triangle rendering example
 	//vertex data that will be copied into the vertex buffer
@@ -214,7 +146,7 @@ int main() {
 					 BG_BLUE.a);
 		glClear(GL_COLOR_BUFFER_BIT);
 
-		glUseProgram(vertexShader);
+		glUseProgram(shaderProgram);
 		glBindVertexArray(VAO); //in case there are other VAOs, we bind the one we want to use
 		glDrawArrays(GL_TRIANGLES, 0, 3);
 
@@ -245,6 +177,82 @@ void processInput(GLFWwindow* window) {
 	if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
 		glfwSetWindowShouldClose(window, 1);
 	}
+}
+
+unsigned int createShaderProgram() {
+	//-----------------------------------------
+	//shader creation and compilation (can be abstracted into a helper function)
+	//-----------------------------------------
+	//----------vertex shader----------
+	//create a vertex shader object
+	unsigned int vertexShader;
+	vertexShader = glCreateShader(GL_VERTEX_SHADER);
+
+	//set the shader's source code
+	std::string vertexShaderSource = readShaderFile(vertexSourcePath);
+	const char* vsrc = vertexShaderSource.c_str();
+	glShaderSource(vertexShader, 1, &vsrc, nullptr);
+
+	//compile the shader and check for compilation errors
+	glCompileShader(vertexShader);
+
+	int vCompileStatus;
+	char vInfoLog[MAX_INFO_SIZE];
+	glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &vCompileStatus);
+	if (vCompileStatus == GL_FALSE) {
+		glGetShaderInfoLog(vertexShader, MAX_INFO_SIZE, NULL, vInfoLog);
+		std::cout << "shader compilation error: " << vInfoLog << std::endl;
+		exit(EXIT_FAILURE);
+	}
+
+	//----------fragment shader----------
+	unsigned int fragShader;
+	fragShader = glCreateShader(GL_FRAGMENT_SHADER);
+
+	std::string fragShaderSource = readShaderFile(fragmentSourcePath);
+	const char* fsrc = fragShaderSource.c_str();
+	glShaderSource(fragShader, 1, &fsrc, nullptr);
+
+	glCompileShader(fragShader);
+
+	int fCompileStatus;
+	char fInfoLog[MAX_INFO_SIZE];
+	glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &fCompileStatus);
+	if (fCompileStatus == GL_FALSE) {
+		glGetShaderInfoLog(vertexShader, MAX_INFO_SIZE, NULL, fInfoLog);
+		std::cout << "shader compilation error: " << fInfoLog << std::endl;
+		exit(EXIT_FAILURE);
+	}
+
+	//-----------------------------------------
+	//shader program creation and linking
+	//-----------------------------------------
+	//create the shader program object
+	unsigned int shaderProgram;
+	shaderProgram = glCreateProgram();
+
+	//attach shaders and link them and check for linking errors
+	glAttachShader(shaderProgram, vertexShader);
+	glAttachShader(shaderProgram, fragShader);
+	glLinkProgram(shaderProgram);
+
+	int linkStatus;
+	char pInfoLog[MAX_INFO_SIZE];
+	glGetProgramiv(shaderProgram, GL_LINK_STATUS, &linkStatus);
+	if (linkStatus == GL_FALSE) {
+		glGetProgramInfoLog(shaderProgram, MAX_INFO_SIZE, nullptr, pInfoLog);
+		std::cerr << "program linking error: " << pInfoLog << std::endl;
+		exit(EXIT_FAILURE);
+	}
+
+	//activate the program
+	glUseProgram(shaderProgram);
+
+	//delete the shaders as they are no longer needed
+	glDeleteShader(vertexShader);
+	glDeleteShader(fragShader);
+
+	return shaderProgram;
 }
 
 //reads a shader source file and returns a string containing the code
