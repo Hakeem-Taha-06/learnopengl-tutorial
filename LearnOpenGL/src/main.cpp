@@ -30,9 +30,6 @@ const Color BG_BLUE{ 0.2f, 0.3f, 0.5f, 1.0f };
 	#endif
 #endif
 
-
-
-
 //event callbacks
 void OnFrameBufferResize(GLFWwindow* window, int width, int height);
 void OnWindowClose(GLFWwindow* window);
@@ -91,17 +88,26 @@ int main() {
 	//triangle rendering example
 	//vertex data that will be copied into the vertex buffer
 	float vertices[] = {
-		-0.5f,  -0.5f, 0.0f,
-		 0.5f,  -0.5f, 0.0f,
-		 0.0f,   0.5f, 0.0f,
+		-0.5f, -0.5f,  0.0f, //bottom left
+		 0.5f, -0.5f,  0.0f, //bottom right
+		-0.5f,  0.5f,  0.0f, //top left
+		 0.5f,  0.5f,  0.0f, //top right
+	};
+
+	//draw order indices, will be stored in an Element buffer object
+	unsigned int indices[] = {
+		0, 1, 2, //first triangle
+		1, 2, 3, //second triangle
 	};
 
 	//create a vertex buffer object and a vertex array object.
 	//vertex buffer: will contain the vertex data that will be sent to the GPU
 	//vertex array: will contain the attributes associated with a VBO as well as calls to glEnableVertexAttribArray/glDisableVertexAttribArray
-	unsigned int VBO, VAO;
+	unsigned int VBO, VAO, EBO;
 	glGenBuffers(1, &VBO);
+	glGenBuffers(1, &EBO);
 	glGenVertexArrays(1, &VAO);
+
 
 	glBindVertexArray(VAO);
 
@@ -110,6 +116,10 @@ int main() {
 
 	//copy the vertex data into the VBO (now accessed as the array buffer since we bound it earlier)
 	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+
+	//similarly copy the indices to the EBO
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
 
 	//set the vertex atrribute pointers
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
@@ -132,6 +142,8 @@ int main() {
 	//stride is 3 * the size of a float (stride = 12)
 	//no offset in the vertex data
 	
+	//for wireframe
+	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
 	//main loop
 	while (!glfwWindowShouldClose(window)) {
@@ -148,14 +160,12 @@ int main() {
 
 		glUseProgram(shaderProgram);
 		glBindVertexArray(VAO); //in case there are other VAOs, we bind the one we want to use
-		glDrawArrays(GL_TRIANGLES, 0, 3);
+		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
 		//check and poll events and swap frame buffers
 		glfwSwapBuffers(window);
 		glfwPollEvents();
 	}
-
-	std::cin.get();
 
 	//frees all allocated memory by GLFW
 	glfwTerminate();
