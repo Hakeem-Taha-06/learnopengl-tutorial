@@ -40,14 +40,21 @@ project "LearnOpenGL"
         "opengl32.lib"
     }
 
+    postbuildcommands
+    {
+        ('{COPY} "%{wks.location}/LearnOpenGL/src/shaders" "%{cfg.targetdir}/shaders/"') --copies the shaders to be in the same directory as the exe
+    }
+
     cppdialect "C++17"
     staticruntime "Off"
     systemversion "latest"
 
+    
+
     filter "configurations:Debug"
         defines "DEBUG"
-        symbols "off"
-        linkoptions {"/NODEFAULTLIB:MSVCRTD"}
+        symbols "on"
+        linkoptions { "/IGNORE:4099" }
 
     filter "configurations:Release"
         defines "RELEASE"
