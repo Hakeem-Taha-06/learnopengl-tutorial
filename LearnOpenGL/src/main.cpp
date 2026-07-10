@@ -25,8 +25,8 @@ const Color BG_BLUE{ 0.2f, 0.3f, 0.5f, 1.0f };
 	const char* fragmentSourcePath = "src/shaders/FragmentShader.frag";
 #else
 	#ifdef RELEASE
-		const char* vertexSourcePath = "shaders/vShaderSource.vert";
-		const char* fragmentSourcePath = "shaders/fShaderSource.frag";
+		const char* vertexSourcePath = "shaders/VertexShader.vert";
+		const char* fragmentSourcePath = "shaders/FragmentShader.frag";
 	#endif
 #endif
 
@@ -154,6 +154,8 @@ int main() {
 		glfwSwapBuffers(window);
 		glfwPollEvents();
 	}
+
+	std::cin.get();
 
 	//frees all allocated memory by GLFW
 	glfwTerminate();
