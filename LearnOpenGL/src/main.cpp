@@ -87,7 +87,7 @@ int main() {
 
 	//triangle rendering example
 	//vertex data that will be copied into the vertex buffer
-	float vertices[] = {
+	float recVertices[] = {
 		-0.5f, -0.5f,  0.0f, //bottom left
 		 0.5f, -0.5f,  0.0f, //bottom right
 		-0.5f,  0.5f,  0.0f, //top left
@@ -95,38 +95,86 @@ int main() {
 	};
 
 	//draw order indices, will be stored in an Element buffer object
-	unsigned int indices[] = {
+	unsigned int recIndices[] = {
 		0, 1, 2, //first triangle
 		1, 2, 3, //second triangle
+	};
+
+	float triangleVertices[] = {
+		-0.5f,  0.5f,  0.0f,
+		 0.5f,  0.5f,  0.0f,
+		 0.0f,  0.75f, 0.0f,
+	};
+
+	unsigned int triangleIndices[] = {
+		0, 1, 2,
 	};
 
 	//create a vertex buffer object and a vertex array object.
 	//vertex buffer: will contain the vertex data that will be sent to the GPU
 	//vertex array: will contain the attributes associated with a VBO as well as calls to glEnableVertexAttribArray/glDisableVertexAttribArray
-	unsigned int VBO, VAO, EBO;
-	glGenBuffers(1, &VBO);
-	glGenBuffers(1, &EBO);
-	glGenVertexArrays(1, &VAO);
+	//------------------ rectangle data ------------------
+	unsigned int VAO_r, VBO_r, EBO_r;
+	glGenBuffers(1, &VBO_r);
+	glGenBuffers(1, &EBO_r);
+	glGenVertexArrays(1, &VAO_r);
 
-
-	glBindVertexArray(VAO);
+	//now the properties for the bound buffers below should be "recorded" in the VAO
+	glBindVertexArray(VAO_r);
 
 	//bind the VBO as an array buffer
-	glBindBuffer(GL_ARRAY_BUFFER, VBO);
-
+	glBindBuffer(GL_ARRAY_BUFFER, VBO_r);
 	//copy the vertex data into the VBO (now accessed as the array buffer since we bound it earlier)
-	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(recVertices), recVertices, GL_STATIC_DRAW);
 
 	//similarly copy the indices to the EBO
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO_r);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(recIndices), recIndices, GL_STATIC_DRAW);
+	
 
 	//set the vertex atrribute pointers
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
 	glEnableVertexAttribArray(0);
 
-	//atp both the vertex data and shader processing instructions have been sent to the gpu
-	//so we need to define how the gpu should interpret this data
+	//unbind VAO FIRST, then unbind the EBO
+	//if you unbind EBO first then you basically undefined the EBO for this VAO
+	//NOTE: unbinding is not really necessary if you bind the VAO you want to use everytime, which is something you would always do anyways ig
+	/*glBindVertexArray(0);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);*/
+
+	std::cout << "VAO_r: " << VAO_r << " VBO_r: " << VBO_r << " EBO_r: " << EBO_r << std::endl;
+	std::cout << "Is VAO_r valid ->" << glIsVertexArray(VAO_r) <<std::endl;
+	std::cout << "--------------------------" << std::endl;
+
+	//------------------ triangle data ------------------
+	unsigned int VAO_t, VBO_t, EBO_t;
+	glGenBuffers(1, &VBO_t);
+	glGenBuffers(1, &EBO_t);
+	glGenVertexArrays(1, &VAO_t);
+
+	glBindVertexArray(VAO_t);
+
+	glBindBuffer(GL_ARRAY_BUFFER, VBO_t);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(triangleVertices), triangleVertices, GL_STATIC_DRAW);
+	
+
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO_t);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(triangleIndices), triangleIndices, GL_STATIC_DRAW);
+	
+	
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+	glEnableVertexAttribArray(0);
+
+	/*glBindVertexArray(0);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);*/
+
+	std::cout << "VAO_t: " << VAO_t << " VBO_t: " << VBO_t << " EBO_t: " << EBO_t << std::endl;
+	std::cout << "Is VAO_t valid -> " << glIsVertexArray(VAO_t) << std::endl;
+	std::cout << "--------------------------" << std::endl;
+
+	//we need to define how the gpu should interpret this data
 	//we want to use three vertices, each one has 3 coordinates (x, y, z) with no space between each two vertices
 	//      V1             V2             V3
 	//[x,   y,   z], [x,   y,   z], [x,   y,   z]
@@ -159,8 +207,19 @@ int main() {
 		glClear(GL_COLOR_BUFFER_BIT);
 
 		glUseProgram(shaderProgram);
-		glBindVertexArray(VAO); //in case there are other VAOs, we bind the one we want to use
+		//rectangle
+		glBindVertexArray(VAO_r); // we bind the VAO that we want to use for drawing
 		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+		glBindVertexArray(0);
+		//triangle
+		glBindVertexArray(VAO_t); 
+		glDrawElements(GL_TRIANGLES, 3, GL_UNSIGNED_INT, 0);
+		glBindVertexArray(0);
+
+		GLenum err;
+		while ((err = glGetError()) != GL_NO_ERROR) {
+			std::cout << "GL error: " << err << std::endl;
+		}
 
 		//check and poll events and swap frame buffers
 		glfwSwapBuffers(window);
@@ -229,9 +288,9 @@ unsigned int createShaderProgram() {
 
 	int fCompileStatus;
 	char fInfoLog[MAX_INFO_SIZE];
-	glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &fCompileStatus);
+	glGetShaderiv(fragShader, GL_COMPILE_STATUS, &fCompileStatus);
 	if (fCompileStatus == GL_FALSE) {
-		glGetShaderInfoLog(vertexShader, MAX_INFO_SIZE, NULL, fInfoLog);
+		glGetShaderInfoLog(fragShader, MAX_INFO_SIZE, NULL, fInfoLog);
 		std::cout << "shader compilation error: " << fInfoLog << std::endl;
 		exit(EXIT_FAILURE);
 	}
