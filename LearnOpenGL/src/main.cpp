@@ -21,12 +21,10 @@ const Color BG_BLUE{ 0.2f, 0.3f, 0.5f, 1.0f };
 
 //shader source paths
 #ifdef DEBUG
-	std::string VERTEX_SOURCE_PATH = "src/shaders/VertexShader.vert";
-	std::string FRAGMENT_SOURCE_PATH = "src/shaders/FragmentShader.frag";
+	std::string SHADER_SOURCE_PATH = "src/shaders/";
 #else
 	#ifdef RELEASE
-		std::string VERTEX_SOURCE_PATH = "shaders/VertexShader.vert";
-		std::string FRAGMENT_SOURCE_PATH = "shaders/FragmentShader.frag";
+		std::string SHADER_SOURCE_PATH = "shaders/";
 	#endif
 #endif
 
@@ -83,13 +81,13 @@ int main() {
 	setGLFWEventCallbacks(window);
 	
 	//create the shader program that uses the vertex and fragment shaders in the shaders folder
-	unsigned int shaderProgram1 = createShaderProgram(VERTEX_SOURCE_PATH.c_str(), 
-													  FRAGMENT_SOURCE_PATH.c_str());
-	unsigned int shaderProgram2 = createShaderProgram(VERTEX_SOURCE_PATH.c_str(),
-													  FRAGMENT_SOURCE_PATH.insert(FRAGMENT_SOURCE_PATH.length()-5, "2").c_str());
-													  //really fragile, but at least the debug and release builds work soooo
+	unsigned int shaderProgram1 = createShaderProgram((SHADER_SOURCE_PATH + "VertexShader.vert").c_str(),
+													  (SHADER_SOURCE_PATH + "FragmentShader.frag").c_str());
+	unsigned int shaderProgram2 = createShaderProgram((SHADER_SOURCE_PATH + "VertexShader.vert").c_str(),
+													  (SHADER_SOURCE_PATH + "FragmentShader2.frag").c_str());
+													  //kinda fragile, but at least the debug and release builds work
 
-	//triangle rendering example
+	//rendering example
 	//vertex data that will be copied into the vertex buffer
 	float recVertices[] = {
 		-0.5f, -0.5f,  0.0f, //bottom left
