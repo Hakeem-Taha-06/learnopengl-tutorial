@@ -37,10 +37,10 @@ void OnWindowClose(GLFWwindow* window);
 //core
 void setGLFWEventCallbacks(GLFWwindow* window);
 void processInput(GLFWwindow* window);
-unsigned int createShaderProgram();
 
 //shader file handling
-std::string readShaderFile(const char* shaderSourcePath);
+std::string readFileContents(const char* filePath);
+unsigned int createShaderProgram();
 
 int main() {
 
@@ -110,9 +110,34 @@ int main() {
 		0, 1, 2,
 	};
 
-	//create a vertex buffer object and a vertex array object.
+	//---------------------------------------------------------------------------------
+	//more compact, but just assumes everything is structured the exact same way, which probably won't happen.
+	//you COULD however store another struct that would contain the attribute pointer stuff for each VAO + the drawing method for the rendering loop
+	//std::vector<std::vector<float>> vertices = {all the vertex data vectors...}
+	//std::vector<std::vector<unsigned int>> indices = {all the index data vectors...}
+	//unsigned int VAOs[16], VBOs[16], EBOs[16];
+	/*for (int i = 0; i < vertices.size(); ++i) {
+		glGenBuffers(1, &VBOs[i]);
+		glGenBuffers(1, &EBOs[i]);
+		glGenVertexArrays(1, &VAOs[i]);
+
+		glBindVertexArray(VAOs[i]);
+
+		glBindBuffer(GL_ARRAY_BUFFER, VBOs[i]);
+		glBufferData(GL_ARRAY_BUFFER, vertices[i].size() * sizeof(float), vertices[i].data(), GL_STATIC_DRAW);
+
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBOs[i]);
+		glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices[i].size() * sizeof(float), indices[i].data(), GL_STATIC_DRAW);
+
+		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+		glEnableVertexAttribArray(0);
+	}*/
+
+	//------------------------------------------------------------------
+	//create a vertex array object, a vertex buffer object and an element buffer object
+	//vertex array: will contain the attributes associated with a VBO as well as calls to glEnableVertexAttribArray/glDisableVertexAttribArray etc...
 	//vertex buffer: will contain the vertex data that will be sent to the GPU
-	//vertex array: will contain the attributes associated with a VBO as well as calls to glEnableVertexAttribArray/glDisableVertexAttribArray
+	//element buffer: will contain the indices for drawing order
 	//------------------ rectangle data ------------------
 	unsigned int VAO_r, VBO_r, EBO_r;
 	glGenBuffers(1, &VBO_r);
@@ -161,7 +186,6 @@ int main() {
 
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO_t);
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(triangleIndices), triangleIndices, GL_STATIC_DRAW);
-	
 	
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
 	glEnableVertexAttribArray(0);
@@ -260,7 +284,7 @@ unsigned int createShaderProgram() {
 	vertexShader = glCreateShader(GL_VERTEX_SHADER);
 
 	//set the shader's source code
-	std::string vertexShaderSource = readShaderFile(vertexSourcePath);
+	std::string vertexShaderSource = readFileContents(vertexSourcePath);
 	const char* vsrc = vertexShaderSource.c_str();
 	glShaderSource(vertexShader, 1, &vsrc, nullptr);
 
@@ -280,7 +304,7 @@ unsigned int createShaderProgram() {
 	unsigned int fragShader;
 	fragShader = glCreateShader(GL_FRAGMENT_SHADER);
 
-	std::string fragShaderSource = readShaderFile(fragmentSourcePath);
+	std::string fragShaderSource = readFileContents(fragmentSourcePath);
 	const char* fsrc = fragShaderSource.c_str();
 	glShaderSource(fragShader, 1, &fsrc, nullptr);
 
@@ -327,27 +351,27 @@ unsigned int createShaderProgram() {
 }
 
 //reads a shader source file and returns a string containing the code
-std::string readShaderFile(const char* shaderSourcePath) {
-	std::ifstream shaderSourceFile;
-	std::stringstream shaderStream;
+std::string readFileContents(const char* filePath) {
+	std::ifstream file;
+	std::stringstream ss;
 
-	shaderSourceFile.exceptions(std::fstream::badbit);
+	file.exceptions(std::fstream::badbit);
 	try {
 
-		shaderSourceFile.open(shaderSourcePath, std::ios_base::in);
-		if (!shaderSourceFile.is_open()) {
-			std::cerr << "error opening file: "<< shaderSourcePath << std::endl;
+		file.open(filePath, std::ios_base::in);
+		if (!file.is_open()) {
+			std::cerr << "error opening file: "<< filePath << std::endl;
 			exit(EXIT_FAILURE);
 		}
 
-		shaderStream << shaderSourceFile.rdbuf();
+		ss << file.rdbuf();
 
-		shaderSourceFile.close();
+		file.close();
 	}
 	catch (std::fstream::failure e) {
-		std::cerr << "Shader file \""<< shaderSourcePath << "\" could not open: " 
+		std::cerr << "File \""<< filePath << "\" could not open: " 
 			<< "(" << e.what() << ")" << std::endl;
 		exit(EXIT_FAILURE);
 	}
-	return shaderStream.str();
+	return ss.str();
 }

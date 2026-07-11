@@ -5,7 +5,6 @@ workspace "LearnOpenGl"
     }
     architecture "x64"
 
-
 outputdir = "%{cfg.buildcfg}-%{cfg.system}-%{cfg.architecture}"
 
 project "LearnOpenGL"
@@ -48,8 +47,6 @@ project "LearnOpenGL"
     cppdialect "C++17"
     staticruntime "Off"
     systemversion "latest"
-
-    
 
     filter "configurations:Debug"
         defines "DEBUG"
