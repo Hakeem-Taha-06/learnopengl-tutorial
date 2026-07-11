@@ -84,10 +84,12 @@ int main() {
 	//create the shader program that uses the vertex and fragment shaders in the shaders folder
 	unsigned int shaderProgram1 = createShaderProgram((SHADER_SOURCE_PATH + "VertexShader.vert").c_str(),
 													  (SHADER_SOURCE_PATH + "FragmentShader.frag").c_str());
-	unsigned int shaderProgram2 = createShaderProgram((SHADER_SOURCE_PATH + "VertexShader.vert").c_str(),
+	unsigned int shaderProgram2 = createShaderProgram((SHADER_SOURCE_PATH + "VertexShader2.vert").c_str(),
 													  (SHADER_SOURCE_PATH + "FragmentShader2.frag").c_str());
+	unsigned int shaderProgram3 = createShaderProgram((SHADER_SOURCE_PATH + "VertexShader3.vert").c_str(),
+													  (SHADER_SOURCE_PATH + "FragmentShader3.frag").c_str());
 													  //kinda fragile, but at least the debug and release builds work
-													  // 
+													   
 	//rendering example
 	//vertex data that will be copied into the vertex buffer
 	float recVertices[] = {
@@ -103,13 +105,25 @@ int main() {
 		1, 2, 3, //second triangle
 	};
 
-	float triangleVertices[] = {
+	float topTriVertices[] = {
 		-0.5f,  0.5f,  0.0f,
 		 0.5f,  0.5f,  0.0f,
 		 0.0f,  0.75f, 0.0f,
 	};
 
-	unsigned int triangleIndices[] = {
+	//unnecessary for a simple triangle, just for demostration purposes
+	unsigned int topTriIndices[] = {
+		0, 1, 2,
+	};
+
+	float botTriVertices[] = {
+		//position             //color
+		-0.5f, -0.5f,  0.0f,   1.0f, 0.0f, 0.0f,
+		 0.5f, -0.5f,  0.0f,   0.0f, 1.0f, 0.0f,
+		 0.0f, -0.75f, 0.0f,   0.0f, 0.0f, 1.0f,
+	};
+
+	unsigned int botTriIndices[] = {
 		0, 1, 2,
 	};
 
@@ -167,32 +181,55 @@ int main() {
 	std::cout << "Is VAO_r valid ->" << glIsVertexArray(VAO_r) <<std::endl;
 	std::cout << "--------------------------" << std::endl;
 
-	//------------------ triangle data ------------------
-	unsigned int VAO_t, VBO_t, EBO_t;
-	glGenBuffers(1, &VBO_t);
-	glGenBuffers(1, &EBO_t);
-	glGenVertexArrays(1, &VAO_t);
+	//------------------ top triangle data ------------------
+	unsigned int VAO_tt, VBO_tt, EBO_tt;
+	glGenBuffers(1, &VBO_tt);
+	glGenBuffers(1, &EBO_tt);
+	glGenVertexArrays(1, &VAO_tt);
 
-	glBindVertexArray(VAO_t);
+	glBindVertexArray(VAO_tt);
 
-	glBindBuffer(GL_ARRAY_BUFFER, VBO_t);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(triangleVertices), triangleVertices, GL_STATIC_DRAW);
+	glBindBuffer(GL_ARRAY_BUFFER, VBO_tt);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(topTriVertices), topTriVertices, GL_STATIC_DRAW);
 	
-
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO_t);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(triangleIndices), triangleIndices, GL_STATIC_DRAW);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO_tt);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(topTriIndices), topTriIndices, GL_STATIC_DRAW);
 	
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
 	glEnableVertexAttribArray(0);
 
-	std::cout << "VAO_t: " << VAO_t << " VBO_t: " << VBO_t << " EBO_t: " << EBO_t << std::endl;
-	std::cout << "Is VAO_t valid -> " << glIsVertexArray(VAO_t) << std::endl;
+	std::cout << "VAO_tt: " << VAO_tt << " VBO_tt: " << VBO_tt << " EBO_tt: " << EBO_tt << std::endl;
+	std::cout << "Is VAO_tt valid -> " << glIsVertexArray(VAO_tt) << std::endl;
 	std::cout << "--------------------------" << std::endl;
 	
+	//------------------ bottom triangle data ------------------
+	unsigned int VAO_bt, VBO_bt, EBO_bt;
+	glGenBuffers(1, &VBO_bt);
+	glGenBuffers(1, &EBO_bt);
+	glGenVertexArrays(1, &VAO_bt);
+
+	glBindVertexArray(VAO_bt);
+
+	glBindBuffer(GL_ARRAY_BUFFER, VBO_bt);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(botTriVertices), botTriVertices, GL_STATIC_DRAW);
+
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO_bt);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(botTriIndices), botTriIndices, GL_STATIC_DRAW);
+
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
+	glEnableVertexAttribArray(0);
+	
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3*sizeof(float)));
+	glEnableVertexAttribArray(1);
+
+	std::cout << "VAO_bt: " << VAO_bt << " VBO_bt: " << VBO_bt << " EBO_tt: " << EBO_bt << std::endl;
+	std::cout << "Is VAO_bt valid -> " << glIsVertexArray(VAO_bt) << std::endl;
+	std::cout << "--------------------------" << std::endl;
+
 	//for wireframe
 	//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
-	//main loop
+	//----------------------- main loop -----------------------
 	while (!glfwWindowShouldClose(window)) {
 
 		//input
@@ -208,8 +245,8 @@ int main() {
 		//rectangle
 		glUseProgram(shaderProgram1);
 
-		float time = glfwGetTime();
-		Color customColor = {std::sin(time)/2.0f + 0.5, 0.0f, std::cos(time)/2.0f + 0.5f, 1.0f};
+		float time = (float)glfwGetTime();
+		Color customColor = {std::sin(time)/2.0f + 0.5f, 0.0f, std::cos(time)/2.0f + 0.5f, 1.0f};
 		int customColorLocation = glGetUniformLocation(shaderProgram1, "customColor");
 		glUniform4f(customColorLocation, customColor.r,
 										 customColor.g,
@@ -219,11 +256,16 @@ int main() {
 		glBindVertexArray(VAO_r); // we bind the VAO that we want to use for drawing
 		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 		glBindVertexArray(0);
-		//triangle
+		//top triangle
 		glUseProgram(shaderProgram2);
-		glBindVertexArray(VAO_t); 
+		glBindVertexArray(VAO_tt); 
 		glDrawElements(GL_TRIANGLES, 3, GL_UNSIGNED_INT, 0);
 		glBindVertexArray(0);
+
+		//bottom triangle
+		glUseProgram(shaderProgram3);
+		glBindVertexArray(VAO_bt);
+		glDrawElements(GL_TRIANGLES, 3, GL_UNSIGNED_INT, 0);
 
 		GLenum err;
 		while ((err = glGetError()) != GL_NO_ERROR) {
