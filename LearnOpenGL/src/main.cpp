@@ -5,6 +5,7 @@
 #include <fstream>
 #include <sstream>
 #include <string>
+#include <cmath>
 
 typedef struct {
 	float r, g, b, a;
@@ -86,7 +87,7 @@ int main() {
 	unsigned int shaderProgram2 = createShaderProgram((SHADER_SOURCE_PATH + "VertexShader.vert").c_str(),
 													  (SHADER_SOURCE_PATH + "FragmentShader2.frag").c_str());
 													  //kinda fragile, but at least the debug and release builds work
-
+													  // 
 	//rendering example
 	//vertex data that will be copied into the vertex buffer
 	float recVertices[] = {
@@ -158,17 +159,9 @@ int main() {
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO_r);
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(recIndices), recIndices, GL_STATIC_DRAW);
 	
-
 	//set the vertex atrribute pointers
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
 	glEnableVertexAttribArray(0);
-
-	//unbind VAO FIRST, then unbind the EBO
-	//if you unbind EBO first then you basically undefined the EBO for this VAO
-	//NOTE: unbinding is not really necessary if you bind the VAO you want to use everytime, which is something you would always do anyways ig
-	/*glBindVertexArray(0);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-	glBindBuffer(GL_ARRAY_BUFFER, 0);*/
 
 	std::cout << "VAO_r: " << VAO_r << " VBO_r: " << VBO_r << " EBO_r: " << EBO_r << std::endl;
 	std::cout << "Is VAO_r valid ->" << glIsVertexArray(VAO_r) <<std::endl;
@@ -192,29 +185,9 @@ int main() {
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
 	glEnableVertexAttribArray(0);
 
-	/*glBindVertexArray(0);
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);*/
-
 	std::cout << "VAO_t: " << VAO_t << " VBO_t: " << VBO_t << " EBO_t: " << EBO_t << std::endl;
 	std::cout << "Is VAO_t valid -> " << glIsVertexArray(VAO_t) << std::endl;
 	std::cout << "--------------------------" << std::endl;
-
-	//we need to define how the gpu should interpret this data
-	//we want to use three vertices, each one has 3 coordinates (x, y, z) with no space between each two vertices
-	//      V1             V2             V3
-	//[x,   y,   z], [x,   y,   z], [x,   y,   z]
-	//    --12--         --12--         --12--
-	// 4    4    4    4    4    4    4    4    4
-	//each vertex is 12 bytes, consisting of 3 floats, 4 bytes each
-
-	//parameters in order (for the glVertexAttribPointer call):
-	//0, since we specified location = 0 in the vertex shader
-	//size is 3, for a vec3 in GLSL
-	//type is GL_FLOAT for a vec* in GLSL
-	//no normalization
-	//stride is 3 * the size of a float (stride = 12)
-	//no offset in the vertex data
 	
 	//for wireframe
 	//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
@@ -234,6 +207,15 @@ int main() {
 		
 		//rectangle
 		glUseProgram(shaderProgram1);
+
+		float time = glfwGetTime();
+		Color customColor = {std::sin(time)/2.0f + 0.5, 0.0f, std::cos(time)/2.0f + 0.5f, 1.0f};
+		int customColorLocation = glGetUniformLocation(shaderProgram1, "customColor");
+		glUniform4f(customColorLocation, customColor.r,
+										 customColor.g,
+										 customColor.b,
+										 customColor.a);
+
 		glBindVertexArray(VAO_r); // we bind the VAO that we want to use for drawing
 		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 		glBindVertexArray(0);
@@ -281,7 +263,7 @@ unsigned int createShaderProgram(const char* vPath, const char* fPath) {
 	//-----------------------------------------
 	//shader creation and compilation (can be abstracted into a helper function)
 	//-----------------------------------------
-	//----------vertex shader----------
+	//---------- vertex shader ----------
 	//create a vertex shader object
 	unsigned int vertexShader;
 	vertexShader = glCreateShader(GL_VERTEX_SHADER);
@@ -303,7 +285,7 @@ unsigned int createShaderProgram(const char* vPath, const char* fPath) {
 		exit(EXIT_FAILURE);
 	}
 
-	//----------fragment shader----------
+	//---------- fragment shader ----------
 	unsigned int fragShader;
 	fragShader = glCreateShader(GL_FRAGMENT_SHADER);
 
