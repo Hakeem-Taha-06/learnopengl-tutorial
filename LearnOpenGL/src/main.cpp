@@ -21,12 +21,12 @@ const Color BG_BLUE{ 0.2f, 0.3f, 0.5f, 1.0f };
 
 //shader source paths
 #ifdef DEBUG
-	const char* vertexSourcePath = "src/shaders/VertexShader.vert";
-	const char* fragmentSourcePath = "src/shaders/FragmentShader.frag";
+	std::string VERTEX_SOURCE_PATH = "src/shaders/VertexShader.vert";
+	std::string FRAGMENT_SOURCE_PATH = "src/shaders/FragmentShader.frag";
 #else
 	#ifdef RELEASE
-		const char* vertexSourcePath = "shaders/VertexShader.vert";
-		const char* fragmentSourcePath = "shaders/FragmentShader.frag";
+		std::string VERTEX_SOURCE_PATH = "shaders/VertexShader.vert";
+		std::string FRAGMENT_SOURCE_PATH = "shaders/FragmentShader.frag";
 	#endif
 #endif
 
@@ -40,7 +40,7 @@ void processInput(GLFWwindow* window);
 
 //shader file handling
 std::string readFileContents(const char* filePath);
-unsigned int createShaderProgram();
+unsigned int createShaderProgram(const char* vPath, const char* fPath);
 
 int main() {
 
@@ -83,7 +83,11 @@ int main() {
 	setGLFWEventCallbacks(window);
 	
 	//create the shader program that uses the vertex and fragment shaders in the shaders folder
-	unsigned int shaderProgram = createShaderProgram();
+	unsigned int shaderProgram1 = createShaderProgram(VERTEX_SOURCE_PATH.c_str(), 
+													  FRAGMENT_SOURCE_PATH.c_str());
+	unsigned int shaderProgram2 = createShaderProgram(VERTEX_SOURCE_PATH.c_str(),
+													  FRAGMENT_SOURCE_PATH.insert(FRAGMENT_SOURCE_PATH.length()-5, "2").c_str());
+													  //really fragile, but at least the debug and release builds work soooo
 
 	//triangle rendering example
 	//vertex data that will be copied into the vertex buffer
@@ -215,7 +219,7 @@ int main() {
 	//no offset in the vertex data
 	
 	//for wireframe
-	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+	//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
 	//main loop
 	while (!glfwWindowShouldClose(window)) {
@@ -229,13 +233,14 @@ int main() {
 					 BG_BLUE.b, 
 					 BG_BLUE.a);
 		glClear(GL_COLOR_BUFFER_BIT);
-
-		glUseProgram(shaderProgram);
+		
 		//rectangle
+		glUseProgram(shaderProgram1);
 		glBindVertexArray(VAO_r); // we bind the VAO that we want to use for drawing
 		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 		glBindVertexArray(0);
 		//triangle
+		glUseProgram(shaderProgram2);
 		glBindVertexArray(VAO_t); 
 		glDrawElements(GL_TRIANGLES, 3, GL_UNSIGNED_INT, 0);
 		glBindVertexArray(0);
@@ -274,7 +279,7 @@ void processInput(GLFWwindow* window) {
 	}
 }
 
-unsigned int createShaderProgram() {
+unsigned int createShaderProgram(const char* vPath, const char* fPath) {
 	//-----------------------------------------
 	//shader creation and compilation (can be abstracted into a helper function)
 	//-----------------------------------------
@@ -284,7 +289,7 @@ unsigned int createShaderProgram() {
 	vertexShader = glCreateShader(GL_VERTEX_SHADER);
 
 	//set the shader's source code
-	std::string vertexShaderSource = readFileContents(vertexSourcePath);
+	std::string vertexShaderSource = readFileContents(vPath);
 	const char* vsrc = vertexShaderSource.c_str();
 	glShaderSource(vertexShader, 1, &vsrc, nullptr);
 
@@ -304,7 +309,7 @@ unsigned int createShaderProgram() {
 	unsigned int fragShader;
 	fragShader = glCreateShader(GL_FRAGMENT_SHADER);
 
-	std::string fragShaderSource = readFileContents(fragmentSourcePath);
+	std::string fragShaderSource = readFileContents(fPath);
 	const char* fsrc = fragShaderSource.c_str();
 	glShaderSource(fragShader, 1, &fsrc, nullptr);
 
