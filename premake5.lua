@@ -25,7 +25,8 @@ project "LearnOpenGL"
     includedirs
     {
         "%{wks.location}/LearnOpenGL/dependencies/include",
-        "%{prj.name}/src"
+        "%{prj.name}/src",
+        "%{prj.name}/include"
     }
 
     libdirs
