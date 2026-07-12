@@ -2,6 +2,7 @@
 #include "GLFW/glfw3.h"
 
 #include "Shader.h"
+#include "Shape.h"
 
 #include <iostream>
 #include <cmath>
@@ -16,6 +17,7 @@ const int HEIGHT = 600;
 
 //colors
 const Color BG_BLUE{ 0.2f, 0.3f, 0.5f, 1.0f };
+const Color BORDER{ 0.2f, 0.2f, 0.2f, 1.0f };
 
 //shader source paths
 #ifdef DEBUG
@@ -84,11 +86,13 @@ int main() {
 				   (SHADER_SOURCE_PATH + "FragmentShader2.frag").c_str());
 	Shader shader3((SHADER_SOURCE_PATH + "VertexShader3.vert").c_str(),
 				   (SHADER_SOURCE_PATH + "FragmentShader3.frag").c_str());
+	Shader shader4((SHADER_SOURCE_PATH + "VertexShader4.vert").c_str(),
+				   (SHADER_SOURCE_PATH + "FragmentShader4.frag").c_str());
 		//kinda fragile, but at least the debug and release builds work
 
 	//rendering example
 	//vertex data that will be copied into the vertex buffer
-	float recVertices[] = {
+	std::vector<float> recVertices = {
 		-0.5f, -0.5f,  0.0f, //bottom left
 		 0.5f, -0.5f,  0.0f, //bottom right
 		-0.5f,  0.5f,  0.0f, //top left
@@ -96,31 +100,43 @@ int main() {
 	};
 
 	//draw order indices, will be stored in an Element buffer object
-	unsigned int recIndices[] = {
+	std::vector<unsigned int> recIndices = {
 		0, 1, 2, //first triangle
 		1, 2, 3, //second triangle
 	};
 
-	float topTriVertices[] = {
+	std::vector<float> topTriVertices = {
 		-0.5f,  0.5f,  0.0f,
 		 0.5f,  0.5f,  0.0f,
 		 0.0f,  0.75f, 0.0f,
 	};
 
 	//unnecessary for a simple triangle, just for demostration purposes
-	unsigned int topTriIndices[] = {
+	std::vector<unsigned int> topTriIndices = {
 		0, 1, 2,
 	};
 
-	float botTriVertices[] = {
+	std::vector<float> botTriVertices = {
 		//position             //color
 		-0.5f, -0.5f,  0.0f,   1.0f, 0.0f, 0.0f,
 		 0.5f, -0.5f,  0.0f,   0.0f, 1.0f, 0.0f,
 		 0.0f, -0.75f, 0.0f,   0.0f, 0.0f, 1.0f,
 	};
 
-	unsigned int botTriIndices[] = {
+	std::vector<unsigned int> botTriIndices = {
 		0, 1, 2,
+	};
+
+	std::vector<float> sqVertices = {
+		 0.0f,  0.5f, 0.0f,
+		 0.5f,  0.0f, 0.0f,
+		 0.0f, -0.5f, 0.0f,
+		-0.5f,  0.0f, 0.0f,
+	};
+
+	std::vector<unsigned int> sqIndices = {
+		0, 1, 2,
+		2, 3, 0,
 	};
 
 	//---------------------------------------------------------------------------------
@@ -152,75 +168,41 @@ int main() {
 	//vertex buffer: will contain the vertex data that will be sent to the GPU
 	//element buffer: will contain the indices for drawing order
 	//------------------ rectangle data ------------------
-	unsigned int VAO_r, VBO_r, EBO_r;
-	glGenBuffers(1, &VBO_r);
-	glGenBuffers(1, &EBO_r);
-	glGenVertexArrays(1, &VAO_r);
+	//unsigned int VAO_r, VBO_r, EBO_r;
+	//glGenBuffers(1, &VBO_r);
+	//glGenBuffers(1, &EBO_r);
+	//glGenVertexArrays(1, &VAO_r);
 
-	//now the properties for the bound buffers below should be "recorded" in the VAO
-	glBindVertexArray(VAO_r);
+	////now the properties for the bound buffers below should be "recorded" in the VAO
+	//glBindVertexArray(VAO_r);
 
-	//bind the VBO as an array buffer
-	glBindBuffer(GL_ARRAY_BUFFER, VBO_r);
-	//copy the vertex data into the VBO (now accessed as the array buffer since we bound it earlier)
-	glBufferData(GL_ARRAY_BUFFER, sizeof(recVertices), recVertices, GL_STATIC_DRAW);
+	////bind the VBO as an array buffer
+	//glBindBuffer(GL_ARRAY_BUFFER, VBO_r);
+	////copy the vertex data into the VBO (now accessed as the array buffer since we bound it earlier)
+	//glBufferData(GL_ARRAY_BUFFER, sizeof(recVertices), recVertices, GL_STATIC_DRAW);
 
-	//similarly copy the indices to the EBO
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO_r);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(recIndices), recIndices, GL_STATIC_DRAW);
-	
-	//set the vertex atrribute pointers
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
-	glEnableVertexAttribArray(0);
+	////similarly copy the indices to the EBO
+	//glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO_r);
+	//glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(recIndices), recIndices, GL_STATIC_DRAW);
+	//
+	////set the vertex atrribute pointers
+	//glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+	//glEnableVertexAttribArray(0);
 
-	std::cout << "VAO_r: " << VAO_r << " VBO_r: " << VBO_r << " EBO_r: " << EBO_r << std::endl;
-	std::cout << "Is VAO_r valid ->" << glIsVertexArray(VAO_r) <<std::endl;
-	std::cout << "--------------------------" << std::endl;
+	Shape rectangle(recVertices, recIndices);
+	rectangle.create(VertexDataShape::Pos3d, GL_STATIC_DRAW);
 
 	//------------------ top triangle data ------------------
-	unsigned int VAO_tt, VBO_tt, EBO_tt;
-	glGenBuffers(1, &VBO_tt);
-	glGenBuffers(1, &EBO_tt);
-	glGenVertexArrays(1, &VAO_tt);
-
-	glBindVertexArray(VAO_tt);
-
-	glBindBuffer(GL_ARRAY_BUFFER, VBO_tt);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(topTriVertices), topTriVertices, GL_STATIC_DRAW);
-	
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO_tt);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(topTriIndices), topTriIndices, GL_STATIC_DRAW);
-	
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
-	glEnableVertexAttribArray(0);
-
-	std::cout << "VAO_tt: " << VAO_tt << " VBO_tt: " << VBO_tt << " EBO_tt: " << EBO_tt << std::endl;
-	std::cout << "Is VAO_tt valid -> " << glIsVertexArray(VAO_tt) << std::endl;
-	std::cout << "--------------------------" << std::endl;
+	Shape topTriangle(topTriVertices, topTriIndices);
+	topTriangle.create(VertexDataShape::Pos3d, GL_STATIC_DRAW);
 	
 	//------------------ bottom triangle data ------------------
-	unsigned int VAO_bt, VBO_bt, EBO_bt;
-	glGenBuffers(1, &VBO_bt);
-	glGenBuffers(1, &EBO_bt);
-	glGenVertexArrays(1, &VAO_bt);
+	Shape bottomTriangle(botTriVertices, botTriIndices);
+	bottomTriangle.create(VertexDataShape::PosCol3d, GL_STATIC_DRAW);
 
-	glBindVertexArray(VAO_bt);
-	
-	glBindBuffer(GL_ARRAY_BUFFER, VBO_bt);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(botTriVertices), botTriVertices, GL_STATIC_DRAW);
-
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO_bt);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(botTriIndices), botTriIndices, GL_STATIC_DRAW);
-
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
-	glEnableVertexAttribArray(0);
-	
-	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3*sizeof(float)));
-	glEnableVertexAttribArray(1);
-
-	std::cout << "VAO_bt: " << VAO_bt << " VBO_bt: " << VBO_bt << " EBO_tt: " << EBO_bt << std::endl;
-	std::cout << "Is VAO_bt valid -> " << glIsVertexArray(VAO_bt) << std::endl;
-	std::cout << "--------------------------" << std::endl;
+	//------------------ middle square data ------------------
+	Shape square(sqVertices, sqIndices);
+	square.create(VertexDataShape::Pos3d, GL_STATIC_DRAW);
 
 	//for wireframe
 	//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
@@ -247,20 +229,22 @@ int main() {
 										   customColor.b,
 										   customColor.a);
 
-		glBindVertexArray(VAO_r); // we bind the VAO that we want to use for drawing
-		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
-		glBindVertexArray(0);
+		//glBindVertexArray(VAO_r); // we bind the VAO that we want to use for drawing
+		//glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+		//glBindVertexArray(0);
+		rectangle.draw(GL_TRIANGLES);
 		//top triangle
 		shader2.use();
-		glBindVertexArray(VAO_tt); 
-		glDrawElements(GL_TRIANGLES, 3, GL_UNSIGNED_INT, 0);
-		glBindVertexArray(0);
-
+		topTriangle.draw(GL_TRIANGLES);
+		
 		//bottom triangle
 		shader3.use();
-		shader3.setUniformf("hOffset", 0.5);
-		glBindVertexArray(VAO_bt);
-		glDrawElements(GL_TRIANGLES, 3, GL_UNSIGNED_INT, 0);
+		shader3.setUniformf("hOffset", 0.5f);
+		bottomTriangle.draw(GL_TRIANGLES);
+
+		//middle square
+		shader4.use();
+		square.draw(GL_TRIANGLES);
 
 		/*GLenum err;
 		while ((err = glGetError()) != GL_NO_ERROR) {
