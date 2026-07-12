@@ -1,17 +1,14 @@
 #include "glad/glad.h"
 #include "GLFW/glfw3.h"
 
+#include "Shader.h"
+
 #include <iostream>
-#include <fstream>
-#include <sstream>
-#include <string>
 #include <cmath>
 
 typedef struct {
 	float r, g, b, a;
 }Color;
-
-#define MAX_INFO_SIZE 512
 
 //window specs
 const int WIDTH = 800;
@@ -36,10 +33,6 @@ void OnWindowClose(GLFWwindow* window);
 //core
 void setGLFWEventCallbacks(GLFWwindow* window);
 void processInput(GLFWwindow* window);
-
-//shader file handling
-std::string readFileContents(const char* filePath);
-unsigned int createShaderProgram(const char* vPath, const char* fPath);
 
 int main() {
 
@@ -66,6 +59,7 @@ int main() {
 	//set the window as the current context
 	//context is the set of properties that define opengl's state
 	glfwMakeContextCurrent(window);
+	glfwSwapInterval(1);
 
 	//init GLAD by giving it the platform specific function that loads openGL's function pointers
 	//glfw provides a function that does that vvvvvvv
@@ -73,6 +67,8 @@ int main() {
 		std::cout << "Failed to initialize GLAD";
 		return -1;
 	}
+
+	std::cout << "GPU: " << glGetString(GL_RENDERER) << std::endl;
 
 	//set openGL rendering window size
 	//starts from the lower left (not top left) corner of the window and covers the full width and height
@@ -82,14 +78,14 @@ int main() {
 	setGLFWEventCallbacks(window);
 	
 	//create the shader program that uses the vertex and fragment shaders in the shaders folder
-	unsigned int shaderProgram1 = createShaderProgram((SHADER_SOURCE_PATH + "VertexShader.vert").c_str(),
-													  (SHADER_SOURCE_PATH + "FragmentShader.frag").c_str());
-	unsigned int shaderProgram2 = createShaderProgram((SHADER_SOURCE_PATH + "VertexShader2.vert").c_str(),
-													  (SHADER_SOURCE_PATH + "FragmentShader2.frag").c_str());
-	unsigned int shaderProgram3 = createShaderProgram((SHADER_SOURCE_PATH + "VertexShader3.vert").c_str(),
-													  (SHADER_SOURCE_PATH + "FragmentShader3.frag").c_str());
-													  //kinda fragile, but at least the debug and release builds work
-													   
+	Shader shader1((SHADER_SOURCE_PATH + "VertexShader.vert").c_str(),
+		(SHADER_SOURCE_PATH + "FragmentShader.frag").c_str());
+	Shader shader2((SHADER_SOURCE_PATH + "VertexShader2.vert").c_str(),
+		(SHADER_SOURCE_PATH + "FragmentShader2.frag").c_str());
+	Shader shader3((SHADER_SOURCE_PATH + "VertexShader3.vert").c_str(),
+		(SHADER_SOURCE_PATH + "FragmentShader3.frag").c_str());
+		//kinda fragile, but at least the debug and release builds work
+
 	//rendering example
 	//vertex data that will be copied into the vertex buffer
 	float recVertices[] = {
@@ -209,7 +205,7 @@ int main() {
 	glGenVertexArrays(1, &VAO_bt);
 
 	glBindVertexArray(VAO_bt);
-
+	
 	glBindBuffer(GL_ARRAY_BUFFER, VBO_bt);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(botTriVertices), botTriVertices, GL_STATIC_DRAW);
 
@@ -243,11 +239,10 @@ int main() {
 		glClear(GL_COLOR_BUFFER_BIT);
 		
 		//rectangle
-		glUseProgram(shaderProgram1);
-
+		shader1.use();
 		float time = (float)glfwGetTime();
 		Color customColor = {std::sin(time)/2.0f + 0.5f, 0.0f, std::cos(time)/2.0f + 0.5f, 1.0f};
-		int customColorLocation = glGetUniformLocation(shaderProgram1, "customColor");
+		int customColorLocation = glGetUniformLocation(shader1.getID(), "customColor");
 		glUniform4f(customColorLocation, customColor.r,
 										 customColor.g,
 										 customColor.b,
@@ -257,20 +252,20 @@ int main() {
 		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 		glBindVertexArray(0);
 		//top triangle
-		glUseProgram(shaderProgram2);
+		shader2.use();
 		glBindVertexArray(VAO_tt); 
 		glDrawElements(GL_TRIANGLES, 3, GL_UNSIGNED_INT, 0);
 		glBindVertexArray(0);
 
 		//bottom triangle
-		glUseProgram(shaderProgram3);
+		shader3.use();
 		glBindVertexArray(VAO_bt);
 		glDrawElements(GL_TRIANGLES, 3, GL_UNSIGNED_INT, 0);
 
-		GLenum err;
+		/*GLenum err;
 		while ((err = glGetError()) != GL_NO_ERROR) {
 			std::cout << "GL error: " << err << std::endl;
-		}
+		}*/
 
 		//check and poll events and swap frame buffers
 		glfwSwapBuffers(window);
@@ -299,106 +294,4 @@ void processInput(GLFWwindow* window) {
 	if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
 		glfwSetWindowShouldClose(window, 1);
 	}
-}
-
-unsigned int createShaderProgram(const char* vPath, const char* fPath) {
-	//-----------------------------------------
-	//shader creation and compilation (can be abstracted into a helper function)
-	//-----------------------------------------
-	//---------- vertex shader ----------
-	//create a vertex shader object
-	unsigned int vertexShader;
-	vertexShader = glCreateShader(GL_VERTEX_SHADER);
-
-	//set the shader's source code
-	std::string vertexShaderSource = readFileContents(vPath);
-	const char* vsrc = vertexShaderSource.c_str();
-	glShaderSource(vertexShader, 1, &vsrc, nullptr);
-
-	//compile the shader and check for compilation errors
-	glCompileShader(vertexShader);
-
-	int vCompileStatus;
-	char vInfoLog[MAX_INFO_SIZE];
-	glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &vCompileStatus);
-	if (vCompileStatus == GL_FALSE) {
-		glGetShaderInfoLog(vertexShader, MAX_INFO_SIZE, NULL, vInfoLog);
-		std::cout << "shader compilation error: " << vInfoLog << std::endl;
-		exit(EXIT_FAILURE);
-	}
-
-	//---------- fragment shader ----------
-	unsigned int fragShader;
-	fragShader = glCreateShader(GL_FRAGMENT_SHADER);
-
-	std::string fragShaderSource = readFileContents(fPath);
-	const char* fsrc = fragShaderSource.c_str();
-	glShaderSource(fragShader, 1, &fsrc, nullptr);
-
-	glCompileShader(fragShader);
-
-	int fCompileStatus;
-	char fInfoLog[MAX_INFO_SIZE];
-	glGetShaderiv(fragShader, GL_COMPILE_STATUS, &fCompileStatus);
-	if (fCompileStatus == GL_FALSE) {
-		glGetShaderInfoLog(fragShader, MAX_INFO_SIZE, NULL, fInfoLog);
-		std::cout << "shader compilation error: " << fInfoLog << std::endl;
-		exit(EXIT_FAILURE);
-	}
-
-	//-----------------------------------------
-	//shader program creation and linking
-	//-----------------------------------------
-	//create the shader program object
-	unsigned int shaderProgram;
-	shaderProgram = glCreateProgram();
-
-	//attach shaders and link them and check for linking errors
-	glAttachShader(shaderProgram, vertexShader);
-	glAttachShader(shaderProgram, fragShader);
-	glLinkProgram(shaderProgram);
-
-	int linkStatus;
-	char pInfoLog[MAX_INFO_SIZE];
-	glGetProgramiv(shaderProgram, GL_LINK_STATUS, &linkStatus);
-	if (linkStatus == GL_FALSE) {
-		glGetProgramInfoLog(shaderProgram, MAX_INFO_SIZE, nullptr, pInfoLog);
-		std::cerr << "program linking error: " << pInfoLog << std::endl;
-		exit(EXIT_FAILURE);
-	}
-
-	//activate the program
-	glUseProgram(shaderProgram);
-
-	//delete the shaders as they are no longer needed
-	glDeleteShader(vertexShader);
-	glDeleteShader(fragShader);
-
-	return shaderProgram;
-}
-
-//reads a shader source file and returns a string containing the code
-std::string readFileContents(const char* filePath) {
-	std::ifstream file;
-	std::stringstream ss;
-
-	file.exceptions(std::fstream::badbit);
-	try {
-
-		file.open(filePath, std::ios_base::in);
-		if (!file.is_open()) {
-			std::cerr << "error opening file: "<< filePath << std::endl;
-			exit(EXIT_FAILURE);
-		}
-
-		ss << file.rdbuf();
-
-		file.close();
-	}
-	catch (std::fstream::failure e) {
-		std::cerr << "File \""<< filePath << "\" could not open: " 
-			<< "(" << e.what() << ")" << std::endl;
-		exit(EXIT_FAILURE);
-	}
-	return ss.str();
 }

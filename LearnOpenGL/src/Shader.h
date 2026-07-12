@@ -1,0 +1,117 @@
+#pragma once
+#include "glad/glad.h"
+
+#include <fstream>
+#include <sstream>
+#include <string>
+#include <iostream>
+
+constexpr auto MAX_INFO_SIZE = 512;
+
+class Shader {
+public:
+	Shader(const char* vPath, const char* fPath);
+	~Shader();
+
+	void use() const;
+	inline unsigned int getID() { return m_ID; }
+private:
+	std::string _readFile(const char* path);
+	void _createShader(const char* sourcePath, GLenum shaderType, unsigned int* shader);
+
+	unsigned int m_ID;
+};
+
+Shader::Shader(const char* vPath, const char* fPath) {
+	//-----------------------------------------
+	//shader creation and compilation (can be abstracted into a helper function)
+	//-----------------------------------------
+	//---------- vertex shader ----------
+	//create a vertex shader object
+	unsigned int vertexShader;
+	_createShader(vPath, GL_VERTEX_SHADER, &vertexShader);
+
+	//---------- fragment shader ----------
+	unsigned int fragShader;
+	_createShader(fPath, GL_FRAGMENT_SHADER, &fragShader);
+
+	//-----------------------------------------
+	//shader program creation and linking
+	//-----------------------------------------
+	//create the shader program object
+	m_ID = glCreateProgram();
+
+	//attach shaders and link them and check for linking errors
+	glAttachShader(m_ID, vertexShader);
+	glAttachShader(m_ID, fragShader);
+	glLinkProgram(m_ID);
+
+	int linkStatus;
+	char pInfoLog[MAX_INFO_SIZE];
+	glGetProgramiv(m_ID, GL_LINK_STATUS, &linkStatus);
+	if (linkStatus == GL_FALSE) {
+		glGetProgramInfoLog(m_ID, MAX_INFO_SIZE, nullptr, pInfoLog);
+		std::cerr << "program linking error: " << pInfoLog << std::endl;
+		exit(EXIT_FAILURE);
+	}
+
+	//activate the program
+	glUseProgram(m_ID);
+
+	//delete the shaders as they are no longer needed
+	glDeleteShader(vertexShader);
+	glDeleteShader(fragShader);
+}
+
+Shader::~Shader() {
+	glDeleteProgram(m_ID);
+}
+
+void Shader::use() const{
+	glUseProgram(m_ID);
+}
+
+void Shader::_createShader(const char* sourcePath, GLenum shaderType, unsigned int* shader) {
+	*shader = glCreateShader(shaderType);
+	
+	std::string fragShaderSource = _readFile(sourcePath);
+	const char* fsrc = fragShaderSource.c_str();
+	glShaderSource(*shader, 1, &fsrc, nullptr);
+
+	glCompileShader(*shader);
+
+	int fCompileStatus;
+	char fInfoLog[MAX_INFO_SIZE];
+	glGetShaderiv(*shader, GL_COMPILE_STATUS, &fCompileStatus);
+	if (fCompileStatus == GL_FALSE) {
+		glGetShaderInfoLog(*shader, MAX_INFO_SIZE, NULL, fInfoLog);
+		std::cout << "shader compilation error: " << fInfoLog << std::endl;
+		exit(EXIT_FAILURE);
+	}
+}
+
+//reads a file and returns a string containing the contents
+std::string Shader::_readFile(const char* path) {
+	std::ifstream file;
+	std::stringstream ss;
+
+	file.exceptions(std::fstream::badbit);
+	try {
+
+		file.open(path, std::ios_base::in);
+		if (!file.is_open()) {
+			std::cerr << "error opening file: " << path << std::endl;
+			exit(EXIT_FAILURE);
+		}
+
+		ss << file.rdbuf();
+
+		file.close();
+	}
+	catch (std::fstream::failure e) {
+		std::cerr << "File \"" << path << "\" could not open: "
+			<< "(" << e.what() << ")" << std::endl;
+		exit(EXIT_FAILURE);
+	}
+	return ss.str();
+}
