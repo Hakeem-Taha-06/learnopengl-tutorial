@@ -79,11 +79,11 @@ int main() {
 	
 	//create the shader program that uses the vertex and fragment shaders in the shaders folder
 	Shader shader1((SHADER_SOURCE_PATH + "VertexShader.vert").c_str(),
-		(SHADER_SOURCE_PATH + "FragmentShader.frag").c_str());
+				   (SHADER_SOURCE_PATH + "FragmentShader.frag").c_str());
 	Shader shader2((SHADER_SOURCE_PATH + "VertexShader2.vert").c_str(),
-		(SHADER_SOURCE_PATH + "FragmentShader2.frag").c_str());
+				   (SHADER_SOURCE_PATH + "FragmentShader2.frag").c_str());
 	Shader shader3((SHADER_SOURCE_PATH + "VertexShader3.vert").c_str(),
-		(SHADER_SOURCE_PATH + "FragmentShader3.frag").c_str());
+				   (SHADER_SOURCE_PATH + "FragmentShader3.frag").c_str());
 		//kinda fragile, but at least the debug and release builds work
 
 	//rendering example
@@ -242,11 +242,10 @@ int main() {
 		shader1.use();
 		float time = (float)glfwGetTime();
 		Color customColor = {std::sin(time)/2.0f + 0.5f, 0.0f, std::cos(time)/2.0f + 0.5f, 1.0f};
-		int customColorLocation = glGetUniformLocation(shader1.getID(), "customColor");
-		glUniform4f(customColorLocation, customColor.r,
-										 customColor.g,
-										 customColor.b,
-										 customColor.a);
+		shader1.setUniformf("customColor", customColor.r,
+										   customColor.g,
+										   customColor.b,
+										   customColor.a);
 
 		glBindVertexArray(VAO_r); // we bind the VAO that we want to use for drawing
 		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
@@ -259,6 +258,7 @@ int main() {
 
 		//bottom triangle
 		shader3.use();
+		shader3.setUniformf("hOffset", 0.5);
 		glBindVertexArray(VAO_bt);
 		glDrawElements(GL_TRIANGLES, 3, GL_UNSIGNED_INT, 0);
 

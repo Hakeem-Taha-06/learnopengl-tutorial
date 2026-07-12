@@ -14,7 +14,26 @@ public:
 	~Shader();
 
 	void use() const;
-	inline unsigned int getID() { return m_ID; }
+	inline unsigned int getID() const { return m_ID; }
+
+	//float uniform
+	void setUniformf(const char* name, float v1) const ;
+	void setUniformf(const char* name, float v1, float v2) const ;
+	void setUniformf(const char* name, float v1, float v2, float v3) const ;
+	void setUniformf(const char* name, float v1, float v2, float v3, float v4) const ;
+
+	//int uniform
+	void setUniformi(const char* name, int v1) const;
+	void setUniformi(const char* name, int v1, int v2) const;
+	void setUniformi(const char* name, int v1, int v2, int v3) const;
+	void setUniformi(const char* name, int v1, int v2, int v3, int v4) const;
+
+	//unsigned int uniform
+	void setUniformui(const char* name, unsigned int v1) const;
+	void setUniformui(const char* name, unsigned int v1, unsigned int v2) const;
+	void setUniformui(const char* name, unsigned int v1, unsigned int v2, unsigned int v3) const;
+	void setUniformui(const char* name, unsigned int v1, unsigned int v2, unsigned int v3, unsigned int v4) const;
+
 private:
 	std::string _readFile(const char* path);
 	void _createShader(const char* sourcePath, GLenum shaderType, unsigned int* shader);
@@ -24,10 +43,9 @@ private:
 
 Shader::Shader(const char* vPath, const char* fPath) {
 	//-----------------------------------------
-	//shader creation and compilation (can be abstracted into a helper function)
+	//shader creation and compilation
 	//-----------------------------------------
 	//---------- vertex shader ----------
-	//create a vertex shader object
 	unsigned int vertexShader;
 	_createShader(vPath, GL_VERTEX_SHADER, &vertexShader);
 
@@ -115,3 +133,48 @@ std::string Shader::_readFile(const char* path) {
 	}
 	return ss.str();
 }
+
+//float uniform
+void Shader::setUniformf(const char* name, float v1) const {
+	glUniform1f(glGetUniformLocation(m_ID, name), v1);
+}
+void Shader::setUniformf(const char* name, float v1, float v2) const {
+	glUniform2f(glGetUniformLocation(m_ID, name), v1, v2);
+}
+void Shader::setUniformf(const char* name, float v1, float v2, float v3) const {
+	glUniform3f(glGetUniformLocation(m_ID, name), v1, v2, v3);
+}
+void Shader::setUniformf(const char* name, float v1, float v2, float v3, float v4) const {
+	glUniform4f(glGetUniformLocation(m_ID, name), v1, v2, v3, v4);
+}
+
+//int uniform
+void Shader::setUniformi(const char* name, int v1) const {
+	glUniform1i(glGetUniformLocation(m_ID, name), v1);
+}
+void Shader::setUniformi(const char* name, int v1, int v2) const {
+	glUniform2i(glGetUniformLocation(m_ID, name), v1, v2);
+}
+void Shader::setUniformi(const char* name, int v1, int v2, int v3) const {
+	glUniform3i(glGetUniformLocation(m_ID, name), v1, v2, v3);
+}
+void Shader::setUniformi(const char* name, int v1, int v2, int v3, int v4) const {
+	glUniform4i(glGetUniformLocation(m_ID, name), v1, v2, v3, v4);
+}
+
+//unsigned int uniform
+void Shader::setUniformui(const char* name, unsigned int v1) const {
+	glUniform1ui(glGetUniformLocation(m_ID, name), v1);
+}
+void Shader::setUniformui(const char* name, unsigned int v1, unsigned int v2) const {
+	glUniform2ui(glGetUniformLocation(m_ID, name), v1, v2);
+}
+void Shader::setUniformui(const char* name, unsigned int v1, unsigned int v2, unsigned int v3) const {
+	glUniform3ui(glGetUniformLocation(m_ID, name), v1, v2, v3);
+}
+void Shader::setUniformui(const char* name, unsigned int v1, unsigned int v2, unsigned int v3, unsigned int v4) const {
+	glUniform4ui(glGetUniformLocation(m_ID, name), v1, v2, v3, v4);
+}
+
+
+
