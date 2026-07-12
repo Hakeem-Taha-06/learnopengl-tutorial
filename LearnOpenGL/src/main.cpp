@@ -140,54 +140,6 @@ int main() {
 	};
 
 	//---------------------------------------------------------------------------------
-	//more compact, but just assumes everything is structured the exact same way, which probably won't happen.
-	//you COULD however store another struct that would contain the attribute pointer stuff for each VAO + the drawing method for the rendering loop
-	//std::vector<std::vector<float>> vertices = {all the vertex data vectors...}
-	//std::vector<std::vector<unsigned int>> indices = {all the index data vectors...}
-	//unsigned int VAOs[16], VBOs[16], EBOs[16];
-	/*for (int i = 0; i < vertices.size(); ++i) {
-		glGenBuffers(1, &VBOs[i]);
-		glGenBuffers(1, &EBOs[i]);
-		glGenVertexArrays(1, &VAOs[i]);
-
-		glBindVertexArray(VAOs[i]);
-
-		glBindBuffer(GL_ARRAY_BUFFER, VBOs[i]);
-		glBufferData(GL_ARRAY_BUFFER, vertices[i].size() * sizeof(float), vertices[i].data(), GL_STATIC_DRAW);
-
-		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBOs[i]);
-		glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices[i].size() * sizeof(float), indices[i].data(), GL_STATIC_DRAW);
-
-		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
-		glEnableVertexAttribArray(0);
-	}*/
-
-	//------------------------------------------------------------------
-	//create a vertex array object, a vertex buffer object and an element buffer object
-	//vertex array: will contain the attributes associated with a VBO as well as calls to glEnableVertexAttribArray/glDisableVertexAttribArray etc...
-	//vertex buffer: will contain the vertex data that will be sent to the GPU
-	//element buffer: will contain the indices for drawing order
-	//------------------ rectangle data ------------------
-	//unsigned int VAO_r, VBO_r, EBO_r;
-	//glGenBuffers(1, &VBO_r);
-	//glGenBuffers(1, &EBO_r);
-	//glGenVertexArrays(1, &VAO_r);
-
-	////now the properties for the bound buffers below should be "recorded" in the VAO
-	//glBindVertexArray(VAO_r);
-
-	////bind the VBO as an array buffer
-	//glBindBuffer(GL_ARRAY_BUFFER, VBO_r);
-	////copy the vertex data into the VBO (now accessed as the array buffer since we bound it earlier)
-	//glBufferData(GL_ARRAY_BUFFER, sizeof(recVertices), recVertices, GL_STATIC_DRAW);
-
-	////similarly copy the indices to the EBO
-	//glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO_r);
-	//glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(recIndices), recIndices, GL_STATIC_DRAW);
-	//
-	////set the vertex atrribute pointers
-	//glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
-	//glEnableVertexAttribArray(0);
 
 	Shape rectangle(recVertices, recIndices);
 	rectangle.create(VertexDataShape::Pos3d, GL_STATIC_DRAW);
@@ -235,11 +187,12 @@ int main() {
 		rectangle.draw(GL_TRIANGLES);
 		//top triangle
 		shader2.use();
+		shader2.setUniformi("isInverted", 1); //bool uniform can take in an int
 		topTriangle.draw(GL_TRIANGLES);
 		
 		//bottom triangle
 		shader3.use();
-		shader3.setUniformf("hOffset", 0.5f);
+		shader3.setUniformf("hOffset", 0.0f);
 		bottomTriangle.draw(GL_TRIANGLES);
 
 		//middle square

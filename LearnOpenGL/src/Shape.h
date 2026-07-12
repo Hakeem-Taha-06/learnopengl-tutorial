@@ -63,7 +63,7 @@ public:
 
 	void draw(GLenum mode) {
 		glBindVertexArray(m_VAO);
-		glDrawElements(mode, m_indices.size() * sizeof(unsigned int), GL_UNSIGNED_INT, 0);
+		glDrawElements(mode, (int)(m_indices.size() * sizeof(unsigned int)), GL_UNSIGNED_INT, 0);
 	}
 	
 private:
