@@ -82,6 +82,9 @@ int main() {
 
 	//hookup event callbacks to the appropriate functions that we defined
 	setGLFWEventCallbacks(window);
+
+	//opengl expects y = 0 to be the bottom line, while images have it at the top
+	stbi_set_flip_vertically_on_load(true);
 	
 	//create the shader program that uses the vertex and fragment shaders in the shaders folder
 	Shader shader1((SHADER_SOURCE_PATH + "VertexShader.vert").c_str(),
@@ -133,9 +136,9 @@ int main() {
 
 	std::vector<float> sqVertices = {
 		 //position           //color             //texture coordinates
-		 0.0f,  0.5f, 0.0f,   1.0f, 0.0f, 0.0f,   0.5f, 0.0f,    //top
+		 0.0f,  0.5f, 0.0f,   1.0f, 0.0f, 0.0f,   0.5f, 1.0f,    //top
 		 0.5f,  0.0f, 0.0f,	  0.0f, 1.0f, 0.0f,   1.0f, 0.5f,    //right
-		 0.0f, -0.5f, 0.0f,   0.0f, 0.0f, 1.0f,   0.5f, 1.0f,    //bottom
+		 0.0f, -0.5f, 0.0f,   0.0f, 0.0f, 1.0f,   0.5f, 0.0f,    //bottom
 		-0.5f,  0.0f, 0.0f,   1.0f, 0.0f, 1.0f,   0.0f, 0.5f,    //left
 	};
 
