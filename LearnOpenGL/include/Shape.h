@@ -14,20 +14,25 @@ class Shape {
 public:
 	Shape(const std::vector<float>& vertices, 
 		  const std::vector<unsigned int>& indices) 
-		 :m_vertices(vertices), m_indices(indices) , m_VAO(0){}
+		 :m_vertices(vertices), m_indices(indices) , m_VAO(0), m_VBO(0), m_EBO(0){}
+
+	~Shape() {
+		unsigned int buffers[] = { m_VAO, m_VBO, m_VAO };
+		glDeleteBuffers(3, buffers);
+	}
 
 	void create(VertexDataShape shape, GLenum usage) {
-		unsigned int VBO, EBO;
-		glGenBuffers(1, &VBO);
-		glGenBuffers(1, &EBO);
+		unsigned int m_VBO, m_EBO;
+		glGenBuffers(1, &m_VBO);
+		glGenBuffers(1, &m_EBO);
 		glGenVertexArrays(1, &m_VAO);
 
 		glBindVertexArray(m_VAO);
 
-		glBindBuffer(GL_ARRAY_BUFFER, VBO);
+		glBindBuffer(GL_ARRAY_BUFFER, m_VBO);
 		glBufferData(GL_ARRAY_BUFFER, m_vertices.size() * sizeof(float), m_vertices.data(), usage);
 
-		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_EBO);
 		glBufferData(GL_ELEMENT_ARRAY_BUFFER, m_indices.size() * sizeof(unsigned int), m_indices.data(), usage);
 
 		//what if the vertex data holds both position and color data vs only position data
@@ -65,7 +70,7 @@ public:
 				break;
 		}
 
-		std::cout << "VAO: " << m_VAO << " VBO: " << VBO << " EBO: " << EBO << std::endl;
+		std::cout << "VAO: " << m_VAO << " VBO: " << m_VBO << " EBO: " << m_EBO << std::endl;
 		std::cout << "Is VAO valid ->" << glIsVertexArray(m_VAO) << std::endl;
 		std::cout << "--------------------------" << std::endl;
 	}
@@ -76,7 +81,7 @@ public:
 	}
 	
 private:
-	unsigned int m_VAO;
+	unsigned int m_VAO, m_VBO, m_EBO;
 	std::vector<float> m_vertices;
 	std::vector<unsigned int> m_indices;
 };

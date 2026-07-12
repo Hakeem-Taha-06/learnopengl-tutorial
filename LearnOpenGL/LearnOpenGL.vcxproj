@@ -112,6 +112,7 @@
   <ItemGroup>
     <ClInclude Include="include\Shader.h" />
     <ClInclude Include="include\Shape.h" />
+    <ClInclude Include="include\Texture.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\glad.c" />

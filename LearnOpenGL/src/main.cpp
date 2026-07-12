@@ -4,6 +4,7 @@
 
 #include "Shader.h"
 #include "Shape.h"
+#include "Texture.h"
 
 #include <iostream>
 #include <cmath>
@@ -22,13 +23,13 @@ const Color BORDER{ 0.2f, 0.2f, 0.2f, 1.0f };
 
 //shader source paths
 #ifdef DEBUG
-	std::string SHADER_SOURCE_PATH = "src/shaders/";
-	std::string ASSETS_PATH = "src/assets/";
+std::string SHADER_SOURCE_PATH = "src/shaders/";
+std::string ASSETS_PATH = "src/assets/";
 #else
-	#ifdef RELEASE
-		std::string SHADER_SOURCE_PATH = "shaders/";
-		std::string ASSETS_PATH = "assets/";
-	#endif
+#ifdef RELEASE
+std::string SHADER_SOURCE_PATH = "shaders/";
+std::string ASSETS_PATH = "assets/";
+#endif
 #endif
 
 //event callbacks
@@ -160,31 +161,8 @@ int main() {
 	Shape square(sqVertices, sqIndices);
 	square.create(VertexDataShape::PosColTex3d, GL_STATIC_DRAW);
 
-	//texture stuff (should have its own class)
-	unsigned int sqTexture;
-	glGenTextures(1, &sqTexture);
-	glBindTexture(GL_TEXTURE_2D, sqTexture);
-
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-	float borderColor[] = { BORDER.r, BORDER.g, BORDER.b, BORDER.a, };
-	glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);
-
-	int width, height, nrChannels;
-	unsigned char* data = stbi_load((ASSETS_PATH + "textures/urara_ballin.png").c_str(), &width, &height, &nrChannels, 0);
-
-	if (data) {
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
-		glGenerateMipmap(GL_TEXTURE_2D);
-	}
-	else {
-		std::cout << "Failed to load texture" << std::endl;
-	}
-
-	stbi_image_free(data);
+	//texture stuff
+	Texture sqTexture((ASSETS_PATH + "textures/urara_ballin.png").c_str());
 
 	//for wireframe
 	//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
@@ -210,10 +188,6 @@ int main() {
 										   customColor.g,
 										   customColor.b,
 										   customColor.a);
-
-		//glBindVertexArray(VAO_r); // we bind the VAO that we want to use for drawing
-		//glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
-		//glBindVertexArray(0);
 		rectangle.draw(GL_TRIANGLES);
 		//top triangle
 		shader2.use();
@@ -227,7 +201,7 @@ int main() {
 
 		//middle square
 		shader4.use();
-		glBindTexture(GL_TEXTURE_2D, sqTexture);
+		sqTexture.use();
 		square.draw(GL_TRIANGLES);
 
 		/*GLenum err;
