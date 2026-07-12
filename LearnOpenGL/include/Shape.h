@@ -5,8 +5,9 @@
 
 enum class VertexDataShape
 {
-	Pos3d, //holds only a 3d position
-	PosCol3d, //holds a 3d position followed by three color
+	Pos3d,      //3d position
+	PosCol3d,   //3d position + rgb value
+	PosColTex3d,//3d position + rgb value + 2 texture coordinates
 };
 
 class Shape {
@@ -53,6 +54,14 @@ public:
 				glEnableVertexAttribArray(0);
 				glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
 				glEnableVertexAttribArray(1);
+				break;
+			case VertexDataShape::PosColTex3d:
+				glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
+				glEnableVertexAttribArray(0);
+				glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
+				glEnableVertexAttribArray(1);
+				glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
+				glEnableVertexAttribArray(2);
 				break;
 		}
 
