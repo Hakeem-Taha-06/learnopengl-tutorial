@@ -23,13 +23,13 @@ const Color BORDER{ 0.2f, 0.2f, 0.2f, 1.0f };
 
 //shader source paths
 #ifdef DEBUG
-std::string SHADER_SOURCE_PATH = "src/shaders/";
-std::string ASSETS_PATH = "src/assets/";
+	std::string SHADER_SOURCE_PATH = "src/shaders/";
+	std::string ASSETS_PATH = "src/assets/";
 #else
-#ifdef RELEASE
-std::string SHADER_SOURCE_PATH = "shaders/";
-std::string ASSETS_PATH = "assets/";
-#endif
+	#ifdef RELEASE
+		std::string SHADER_SOURCE_PATH = "shaders/";
+		std::string ASSETS_PATH = "assets/";
+	#endif
 #endif
 
 //event callbacks
