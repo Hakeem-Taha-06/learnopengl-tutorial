@@ -40,6 +40,8 @@ void OnWindowClose(GLFWwindow* window);
 void setGLFWEventCallbacks(GLFWwindow* window);
 void processInput(GLFWwindow* window);
 
+float a = 0.0f;
+
 int main() {
 
 	//init glfw
@@ -165,7 +167,14 @@ int main() {
 	square.create(VertexDataShape::PosColTex3d, GL_STATIC_DRAW);
 
 	//texture stuff
-	Texture sqTexture((ASSETS_PATH + "textures/urara_ballin.png").c_str());
+	Texture texture1((ASSETS_PATH + "textures/urara_ballin.png").c_str());
+	Texture texture2((ASSETS_PATH + "textures/cool_cat.png").c_str());
+
+	shader4.use();
+	shader4.setUniformi("texture1", 0);
+	shader4.setUniformi("texture2", 1);
+	texture1.setUnit(0);
+	texture2.setUnit(1);
 
 	//for wireframe
 	//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
@@ -202,9 +211,10 @@ int main() {
 		shader3.setUniformf("hOffset", 0.0f);
 		bottomTriangle.draw(GL_TRIANGLES);
 
+
 		//middle square
 		shader4.use();
-		sqTexture.use();
+		shader4.setUniformf("a", a);
 		square.draw(GL_TRIANGLES);
 
 		/*GLenum err;
@@ -238,5 +248,19 @@ void setGLFWEventCallbacks(GLFWwindow* window) {
 void processInput(GLFWwindow* window) {
 	if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
 		glfwSetWindowShouldClose(window, 1);
+	}
+
+	//there's probably a better way to do this
+	if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS) {
+		a += 0.01f;
+		if (a >= 1.0) {
+			a = 1.0f;
+		}
+	}
+	if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS) {
+		a -= 0.01f;
+		if (a <= 0.0) {
+			a = 0.0f;
+		}
 	}
 }

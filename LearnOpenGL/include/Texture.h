@@ -5,8 +5,8 @@
 class Texture {
 public:
 	Texture(const char* imagePath) {
-		glGenTextures(1, &m_texture);
-		glBindTexture(GL_TEXTURE_2D, m_texture);
+		glGenTextures(1, &m_ID);
+		glBindTexture(GL_TEXTURE_2D, m_ID);
 
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
@@ -31,13 +31,20 @@ public:
 	}
 
 	~Texture() {
-		glDeleteTextures(1, &m_texture);
+		glDeleteTextures(1, &m_ID);
 	}
 
 	void use() {
-		glBindTexture(GL_TEXTURE_2D, m_texture);
+		glBindTexture(GL_TEXTURE_2D, m_ID);
+	}
+
+	inline unsigned int getID() const { return m_ID; }
+
+	void setUnit(unsigned int unit) {
+		glActiveTexture(GL_TEXTURE0 + unit);
+		glBindTexture(GL_TEXTURE_2D, m_ID);
 	}
 
 private:
-	unsigned int m_texture;
+	unsigned int m_ID;
 };
