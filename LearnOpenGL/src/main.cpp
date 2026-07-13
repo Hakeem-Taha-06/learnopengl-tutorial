@@ -108,10 +108,10 @@ int main() {
 	//rendering example
 	//vertex data that will be copied into the vertex buffer
 	std::vector<float> recVertices = {
-		-0.5f, -0.5f,  0.0f, //bottom left
-		 0.5f, -0.5f,  0.0f, //bottom right
-		-0.5f,  0.5f,  0.0f, //top left
-		 0.5f,  0.5f,  0.0f, //top right
+		-1.0f, -1.0f,  0.0f, //bottom left
+		 1.0f, -1.0f,  0.0f, //bottom right
+		-1.0f,  1.0f,  0.0f, //top left
+		 1.0f,  1.0f,  0.0f, //top right
 	};
 
 	//draw order indices, will be stored in an Element buffer object
@@ -229,12 +229,34 @@ int main() {
 		texture2.setUnit(1);
 
 		trans = glm::mat4(1.0f);
+		trans = glm::translate(trans, glm::vec3(0.5f, 0.5f, 0.0f));
 		trans = glm::rotate(trans, (float)glfwGetTime()*2, glm::vec3(0.0f, 0.0f, 1.0f));
 		
 		//middle square
 		shader4.use();
 		shader4.setUniformMat4("transform", glm::value_ptr(trans));
 		shader4.setUniformf("a", a);
+		square.draw(GL_TRIANGLES);
+
+		trans = glm::mat4(1.0f);
+		trans = glm::translate(trans, glm::vec3(-0.5f, -0.5f, 0.0f));
+		trans = glm::rotate(trans, -(float)glfwGetTime() * 2, glm::vec3(0.0f, 0.0f, 1.0f));
+
+		shader4.setUniformMat4("transform", glm::value_ptr(trans));
+		square.draw(GL_TRIANGLES);
+
+		trans = glm::mat4(1.0f);
+		trans = glm::translate(trans, glm::vec3(0.5f, -0.5f, 0.0f));
+		trans = glm::rotate(trans, (float)glfwGetTime() * 2, glm::vec3(0.0f, 0.0f, 1.0f));
+
+		shader4.setUniformMat4("transform", glm::value_ptr(trans));
+		square.draw(GL_TRIANGLES);
+
+		trans = glm::mat4(1.0f);
+		trans = glm::translate(trans, glm::vec3(-0.5f, 0.5f, 0.0f));
+		trans = glm::rotate(trans, -(float)glfwGetTime() * 2, glm::vec3(0.0f, 0.0f, 1.0f));
+
+		shader4.setUniformMat4("transform", glm::value_ptr(trans));
 		square.draw(GL_TRIANGLES);
 
 		/*GLenum err;
