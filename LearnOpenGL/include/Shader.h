@@ -34,6 +34,9 @@ public:
 	void setUniformui(const char* name, unsigned int v1, unsigned int v2, unsigned int v3) const;
 	void setUniformui(const char* name, unsigned int v1, unsigned int v2, unsigned int v3, unsigned int v4) const;
 
+	//matrix uniform
+	void setUniformMat4(const char* name, const float* matrix);
+
 private:
 	std::string _readFile(const char* path);
 	void _createShader(const char* sourcePath, GLenum shaderType, unsigned int* shader);
@@ -176,5 +179,7 @@ void Shader::setUniformui(const char* name, unsigned int v1, unsigned int v2, un
 	glUniform4ui(glGetUniformLocation(m_ID, name), v1, v2, v3, v4);
 }
 
-
-
+//matrix uniform
+void Shader::setUniformMat4(const char* name, const float* matrix) {
+	glUniformMatrix4fv(glGetUniformLocation(m_ID, name), 1, GL_FALSE, matrix);
+}

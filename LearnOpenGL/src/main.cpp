@@ -1,6 +1,11 @@
 #include "glad/glad.h"
 #include "GLFW/glfw3.h"
+
 #include "stb/stb_image.h"
+
+#include "glm/glm.hpp"
+#include "glm/gtc/matrix_transform.hpp"
+#include "glm/gtc/type_ptr.hpp"
 
 #include "Shader.h"
 #include "Shape.h"
@@ -8,13 +13,14 @@
 
 #include <iostream>
 #include <cmath>
+#include <print>
 
 typedef struct {
 	float r, g, b, a;
 }Color;
 
 //window specs
-const int WIDTH = 800;
+const int WIDTH = 600;
 const int HEIGHT = 600;
 
 //colors
@@ -141,7 +147,7 @@ int main() {
 		 0.0f,  0.5f, 0.0f,   1.0f, 0.0f, 0.0f,   0.5f, 1.0f,    //top
 		 0.5f,  0.0f, 0.0f,	  0.0f, 1.0f, 0.0f,   1.0f, 0.5f,    //right
 		 0.0f, -0.5f, 0.0f,   0.0f, 0.0f, 1.0f,   0.5f, 0.0f,    //bottom
-		-0.5f,  0.0f, 0.0f,   1.0f, 0.0f, 1.0f,   0.0f, 0.5f,    //left
+		-0.5f,  0.0f, 0.0f,   1.0f, 1.0f, 0.0f,   0.0f, 0.5f,    //left
 	};
 
 	std::vector<unsigned int> sqIndices = {
@@ -173,8 +179,16 @@ int main() {
 	shader4.use();
 	shader4.setUniformi("texture1", 0);
 	shader4.setUniformi("texture2", 1);
-	texture1.setUnit(0);
-	texture2.setUnit(1);
+
+	glm::vec4 vector(1.0f, 0.0f, 0.0f, 1.0f);
+	glm::mat4 trans(1.0f);
+
+	trans = glm::translate(trans, glm::vec3(0.5f, 0.5f, 0.0f));
+	trans = glm::rotate(trans, glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+
+	vector = trans * vector;
+
+	std::print("vector: ({}, {}, {})\n", vector.x, vector.y, vector.z);
 
 	//for wireframe
 	//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
@@ -211,9 +225,15 @@ int main() {
 		shader3.setUniformf("hOffset", 0.0f);
 		bottomTriangle.draw(GL_TRIANGLES);
 
+		texture1.setUnit(0);
+		texture2.setUnit(1);
 
+		trans = glm::mat4(1.0f);
+		trans = glm::rotate(trans, (float)glfwGetTime()*2, glm::vec3(0.0f, 0.0f, 1.0f));
+		
 		//middle square
 		shader4.use();
+		shader4.setUniformMat4("transform", glm::value_ptr(trans));
 		shader4.setUniformf("a", a);
 		square.draw(GL_TRIANGLES);
 
