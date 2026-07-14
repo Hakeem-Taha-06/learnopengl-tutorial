@@ -52,7 +52,7 @@ void OnWindowClose(GLFWwindow* window);
 void setGLFWEventCallbacks(GLFWwindow* window);
 void processInput(GLFWwindow* window);
 
-float a = 0.0f;
+float texInterp = 0.0f;
 
 int main() {
 
@@ -89,10 +89,18 @@ int main() {
 	}
 
 	std::cout << "GPU: " << glGetString(GL_RENDERER) << std::endl;
+	std::cout << "GL Version: " << glGetString(GL_VERSION) << std::endl;
 
 	//set openGL rendering window size
 	//starts from the lower left (not top left) corner of the window and covers the full width and height
 	glViewport(0, 0, WIDTH, HEIGHT);
+
+	//enables depth testing via z-buffer
+	glEnable(GL_DEPTH_TEST);
+	
+	GLint depthBits = 0;
+	glGetFramebufferAttachmentParameteriv(GL_FRAMEBUFFER, GL_DEPTH, GL_FRAMEBUFFER_ATTACHMENT_DEPTH_SIZE, &depthBits);
+	std::cout << "Depth buffer bits: " << depthBits << std::endl;
 
 	//hookup event callbacks to the appropriate functions that we defined
 	setGLFWEventCallbacks(window);
@@ -113,7 +121,7 @@ int main() {
 
 	//rendering example
 	//vertex data that will be copied into the vertex buffer
-	std::vector<float> recVertices = {
+	std::vector<float> recVertices{
 		-1.0f, -1.0f,  0.0f, //bottom left
 		 1.0f, -1.0f,  0.0f, //bottom right
 		-1.0f,  1.0f,  0.0f, //top left
@@ -121,34 +129,34 @@ int main() {
 	};
 
 	//draw order indices, will be stored in an Element buffer object
-	std::vector<unsigned int> recIndices = {
+	std::vector<unsigned int> recIndices{
 		0, 1, 2, //first triangle
 		1, 2, 3, //second triangle
 	};
 
-	std::vector<float> topTriVertices = {
+	std::vector<float> topTriVertices{
 		-0.5f,  0.5f,  0.0f,
 		 0.5f,  0.5f,  0.0f,
 		 0.0f,  0.75f, 0.0f,
 	};
 
 	//unnecessary for a simple triangle, just for demostration purposes
-	std::vector<unsigned int> topTriIndices = {
+	std::vector<unsigned int> topTriIndices{
 		0, 1, 2,
 	};
 
-	std::vector<float> botTriVertices = {
+	std::vector<float> botTriVertices{
 		//position             //color
 		-0.5f, -0.5f,  0.0f,   1.0f, 0.0f, 0.0f,
 		 0.5f, -0.5f,  0.0f,   0.0f, 1.0f, 0.0f,
 		 0.0f, -0.75f, 0.0f,   0.0f, 0.0f, 1.0f,
 	};
 
-	std::vector<unsigned int> botTriIndices = {
+	std::vector<unsigned int> botTriIndices{
 		0, 1, 2,
 	};
 
-	std::vector<float> sqVertices = {
+	std::vector<float> sqVertices{
 		 //position           //color             //texture coordinates
 		 0.0f,  0.5f, 0.0f,   1.0f, 0.0f, 0.0f,   0.5f, 1.0f,    //top
 		 0.5f,  0.0f, 0.0f,	  0.0f, 1.0f, 0.0f,   1.0f, 0.5f,    //right
@@ -156,9 +164,74 @@ int main() {
 		-0.5f,  0.0f, 0.0f,   1.0f, 1.0f, 0.0f,   0.0f, 0.5f,    //left
 	};
 
-	std::vector<unsigned int> sqIndices = {
+	std::vector<unsigned int> sqIndices{
 		0, 1, 2,
 		2, 3, 0,
+	};
+
+	std::vector<float> cubeVertices{ 
+		//positions         //color            //texture coordinates
+		//back
+		-0.5f,-0.5f,-0.5f,  1.0f, 0.0f, 0.0f,  0.0f, 0.0f,
+		 0.5f,-0.5f,-0.5f,  0.0f, 1.0f, 0.0f,  1.0f, 0.0f,
+		 0.5f, 0.5f,-0.5f,  0.0f, 0.0f, 1.0f,  1.0f, 1.0f,
+		-0.5f, 0.5f,-0.5f,  1.0f, 1.0f, 0.0f,  0.0f, 1.0f,
+
+		//front
+		-0.5f,-0.5f, 0.5f,  1.0f, 0.0f, 0.0f,  0.0f, 0.0f,
+		 0.5f,-0.5f, 0.5f,  0.0f, 1.0f, 0.0f,  1.0f, 0.0f,
+		 0.5f, 0.5f, 0.5f,  0.0f, 0.0f, 1.0f,  1.0f, 1.0f,
+		-0.5f, 0.5f, 0.5f,  1.0f, 1.0f, 0.0f,  0.0f, 1.0f,
+
+		//left
+		-0.5f, 0.5f, 0.5f,  1.0f, 0.0f, 0.0f,  1.0f, 0.0f,
+		-0.5f, 0.5f,-0.5f,  0.0f, 1.0f, 0.0f,  1.0f, 1.0f,
+		-0.5f,-0.5f,-0.5f,  0.0f, 0.0f, 1.0f,  0.0f, 1.0f,
+		-0.5f,-0.5f, 0.5f,  1.0f, 1.0f, 0.0f,  0.0f, 0.0f,
+
+		//right
+		 0.5f, 0.5f, 0.5f,  1.0f, 0.0f, 0.0f,  1.0f, 0.0f,
+		 0.5f, 0.5f,-0.5f,  0.0f, 1.0f, 0.0f,  1.0f, 1.0f,
+		 0.5f,-0.5f,-0.5f,  0.0f, 0.0f, 1.0f,  0.0f, 1.0f,
+		 0.5f,-0.5f, 0.5f,  1.0f, 1.0f, 0.0f,  0.0f, 0.0f,
+
+		 //bottom
+		-0.5f,-0.5f,-0.5f,  1.0f, 0.0f, 0.0f,  0.0f, 1.0f,
+		 0.5f,-0.5f,-0.5f,  0.0f, 1.0f, 0.0f,  1.0f, 1.0f,
+		 0.5f,-0.5f, 0.5f,  0.0f, 0.0f, 1.0f,  1.0f, 0.0f,
+		-0.5f,-0.5f, 0.5f,  1.0f, 1.0f, 0.0f,  0.0f, 0.0f,
+
+		//top
+		-0.5f, 0.5f,-0.5f,  1.0f, 0.0f, 0.0f,  0.0f, 1.0f,
+		 0.5f, 0.5f,-0.5f,  0.0f, 1.0f, 0.0f,  1.0f, 1.0f,
+		 0.5f, 0.5f, 0.5f,  0.0f, 0.0f, 1.0f,  1.0f, 0.0f,
+		-0.5f, 0.5f, 0.5f,  1.0f, 1.0f, 0.0f,  0.0f, 0.0f,
+	};
+
+	std::vector<unsigned int> cubeIndices= {
+		//back
+		0, 1, 2,
+		2, 3, 0,
+
+		//front
+		4, 5, 6,
+		6, 7, 4,
+
+		//left
+		8, 9, 10,
+		10, 11, 8,
+
+		//right
+		12, 13, 14, 
+		14, 15, 12,
+
+		//bottom
+		16, 17, 18,
+		18, 19, 16,
+
+		//top
+		20, 21, 22,
+		22, 23, 20,
 	};
 
 	//---------------------------------------------------------------------------------
@@ -177,6 +250,10 @@ int main() {
 	//------------------ middle square data ------------------
 	Shape square(sqVertices, sqIndices);
 	square.create(VertexDataShape::PosColTex3d, GL_STATIC_DRAW);
+
+	//------------------ cube data ------------------
+	Shape cube(cubeVertices, cubeIndices);
+	cube.create(VertexDataShape::PosColTex3d, GL_STATIC_DRAW);
 
 	//texture stuff
 	Texture texture1((ASSETS_PATH + "textures/urara_ballin.png").c_str());
@@ -212,26 +289,7 @@ int main() {
 					 BG_BLUE.g, 
 					 BG_BLUE.b, 
 					 BG_BLUE.a);
-		glClear(GL_COLOR_BUFFER_BIT);
-		
-		//rectangle
-		shader1.use();
-		float time = (float)glfwGetTime();
-		Color customColor = {std::sin(time)/2.0f + 0.5f, 0.0f, std::cos(time)/2.0f + 0.5f, 1.0f};
-		shader1.setUniformf("customColor", customColor.r,
-										   customColor.g,
-										   customColor.b,
-										   customColor.a);
-		rectangle.draw(GL_TRIANGLES);
-		////top triangle
-		//shader2.use();
-		//shader2.setUniformi("isInverted", 0); //bool uniform can take in an int
-		//topTriangle.draw(GL_TRIANGLES);
-		//
-		////bottom triangle
-		//shader3.use();
-		//shader3.setUniformf("hOffset", 0.0f);
-		//bottomTriangle.draw(GL_TRIANGLES);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 		//coordinate transformation pipeline (MVP pipeline)
 		//model matrix: local -> world
@@ -243,45 +301,25 @@ int main() {
 		view = glm::translate(view, glm::vec3(-camera.x, -camera.y, -camera.z));
 
 		//projection matrix: view -> clip
-		glm::mat4 projection = glm::perspective(glm::radians(45.0f), (float)(WIDTH / HEIGHT), 0.1f, 100.0f);
+		glm::mat4 projection = glm::perspective(glm::radians(45.0f), (float)WIDTH / (float)HEIGHT, 0.1f, 100.0f);
 
-		//middle square
 		texture1.setUnit(0);
 		texture2.setUnit(1);
-
-		trans = glm::mat4(1.0f);
-		trans = glm::translate(trans, glm::vec3(0.5f, 0.5f, 0.0f));
-		trans = glm::rotate(trans, (float)glfwGetTime()*2, glm::vec3(0.0f, 0.0f, 1.0f));
 		
 		shader4.use();
+
+		shader4.setUniformf("texInterp", texInterp);
+
 		shader4.setUniformMat4("model", glm::value_ptr(model));
 		shader4.setUniformMat4("view", glm::value_ptr(view));
 		shader4.setUniformMat4("projection", glm::value_ptr(projection));
 
-		shader4.setUniformMat4("transform", glm::value_ptr(trans));
-		shader4.setUniformf("a", a);
-		square.draw(GL_TRIANGLES);
 
 		trans = glm::mat4(1.0f);
-		trans = glm::translate(trans, glm::vec3(-0.5f, -0.5f, 0.0f));
 		trans = glm::rotate(trans, -(float)glfwGetTime() * 2, glm::vec3(0.0f, 0.0f, 1.0f));
 
 		shader4.setUniformMat4("transform", glm::value_ptr(trans));
-		square.draw(GL_TRIANGLES);
-
-		trans = glm::mat4(1.0f);
-		trans = glm::translate(trans, glm::vec3(0.5f, -0.5f, 0.0f));
-		trans = glm::rotate(trans, (float)glfwGetTime() * 2, glm::vec3(0.0f, 0.0f, 1.0f));
-
-		shader4.setUniformMat4("transform", glm::value_ptr(trans));
-		square.draw(GL_TRIANGLES);
-
-		trans = glm::mat4(1.0f);
-		trans = glm::translate(trans, glm::vec3(-0.5f, 0.5f, 0.0f));
-		trans = glm::rotate(trans, -(float)glfwGetTime() * 2, glm::vec3(0.0f, 0.0f, 1.0f));
-
-		shader4.setUniformMat4("transform", glm::value_ptr(trans));
-		square.draw(GL_TRIANGLES);
+		cube.draw(GL_TRIANGLES);
 
 		/*GLenum err;
 		while ((err = glGetError()) != GL_NO_ERROR) {
@@ -318,53 +356,53 @@ void processInput(GLFWwindow* window) {
 
 	//there's probably a better way to do this
 	if (glfwGetKey(window, GLFW_KEY_SLASH) == GLFW_PRESS) {
-		a += 0.01f;
-		if (a >= 1.0) {
-			a = 1.0f;
+		texInterp += 0.01f;
+		if (texInterp >= 1.0) {
+			texInterp = 1.0f;
 		}
 	}
 	if (glfwGetKey(window, GLFW_KEY_PERIOD) == GLFW_PRESS) {
-		a -= 0.01f;
-		if (a <= 0.0) {
-			a = 0.0f;
+		texInterp -= 0.01f;
+		if (texInterp <= 0.0) {
+			texInterp = 0.0f;
 		}
 	}
 
 	//camera controls
 	if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS) {
 		camera.z += 0.01f;
-		if (camera.z >= 3.0) {
-			camera.z = 3.0f;
+		if (camera.z >= 10.0) {
+			camera.z = 10.0f;
 		}
 	}
 	if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS) {
 		camera.z -= 0.01f;
-		if (camera.z <= -3.0) {
-			camera.z = -3.0f;
+		if (camera.z <= -10.0) {
+			camera.z = -10.0f;
 		}
 	}
 	if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS) {
 		camera.x += 0.01f;
-		if (camera.x >= 3.0) {
-			camera.x = 3.0f;
+		if (camera.x >= 10.0) {
+			camera.x = 10.0f;
 		}
 	}
 	if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS) {
 		camera.x -= 0.01f;
-		if (camera.x <= -3.0) {
-			camera.x = -3.0f;
+		if (camera.x <= -10.0) {
+			camera.x = -10.0f;
 		}
 	}
 	if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS) {
 		camera.y += 0.01f;
-		if (camera.y >= 3.0) {
-			camera.y = 3.0f;
+		if (camera.y >= 10.0) {
+			camera.y = 10.0f;
 		}
 	}
 	if (glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS) {
 		camera.y -= 0.01f;
-		if (camera.y <= -3.0) {
-			camera.y = -3.0f;
+		if (camera.y <= -10.0) {
+			camera.y = -10.0f;
 		}
 	}
 }

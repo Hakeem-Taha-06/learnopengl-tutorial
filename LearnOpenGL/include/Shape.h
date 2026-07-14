@@ -34,8 +34,9 @@ Shape::Shape(const std::vector<float>& vertices,
 
 
 Shape::~Shape() {
-	unsigned int buffers[] = { m_VAO, m_VBO, m_VAO };
-	glDeleteBuffers(3, buffers);
+	unsigned int buffers[] = { m_VBO, m_EBO};
+	glDeleteBuffers(2, buffers);
+	glDeleteVertexArrays(1, &m_VAO);
 }
 
 void Shape::create(VertexDataShape shape, GLenum usage) {
@@ -93,5 +94,5 @@ void Shape::create(VertexDataShape shape, GLenum usage) {
 
 void Shape::draw(GLenum mode) {
 	glBindVertexArray(m_VAO);
-	glDrawElements(mode, (int)(m_indices.size() * sizeof(unsigned int)), GL_UNSIGNED_INT, 0);
+	glDrawElements(mode, (int)m_indices.size(), GL_UNSIGNED_INT, 0);
 }
