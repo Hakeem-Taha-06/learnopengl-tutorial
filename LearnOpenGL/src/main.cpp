@@ -19,6 +19,10 @@ typedef struct {
 	float r, g, b, a;
 }Color;
 
+typedef struct {
+	float x, y, z;
+}Camera;
+
 //window specs
 const int WIDTH = 600;
 const int HEIGHT = 600;
@@ -26,6 +30,8 @@ const int HEIGHT = 600;
 //colors
 const Color BG_BLUE{ 0.2f, 0.3f, 0.5f, 1.0f };
 const Color BORDER{ 0.2f, 0.2f, 0.2f, 1.0f };
+
+Camera camera{0.0f, 0.0f, 3.0f};
 
 //shader source paths
 #ifdef DEBUG
@@ -180,6 +186,8 @@ int main() {
 	shader4.setUniformi("texture1", 0);
 	shader4.setUniformi("texture2", 1);
 
+
+	//------------------------- transformations -------------------------
 	glm::vec4 vector(1.0f, 0.0f, 0.0f, 1.0f);
 	glm::mat4 trans(1.0f);
 
@@ -215,16 +223,29 @@ int main() {
 										   customColor.b,
 										   customColor.a);
 		rectangle.draw(GL_TRIANGLES);
-		//top triangle
-		shader2.use();
-		shader2.setUniformi("isInverted", 0); //bool uniform can take in an int
-		topTriangle.draw(GL_TRIANGLES);
-		
-		//bottom triangle
-		shader3.use();
-		shader3.setUniformf("hOffset", 0.0f);
-		bottomTriangle.draw(GL_TRIANGLES);
+		////top triangle
+		//shader2.use();
+		//shader2.setUniformi("isInverted", 0); //bool uniform can take in an int
+		//topTriangle.draw(GL_TRIANGLES);
+		//
+		////bottom triangle
+		//shader3.use();
+		//shader3.setUniformf("hOffset", 0.0f);
+		//bottomTriangle.draw(GL_TRIANGLES);
 
+		//coordinate transformation pipeline (MVP pipeline)
+		//model matrix: local -> world
+		glm::mat4 model(1.0f);
+		model = glm::rotate(model, glm::radians(-55.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+
+		//view matrix: world -> view
+		glm::mat4 view(1.0f);
+		view = glm::translate(view, glm::vec3(-camera.x, -camera.y, -camera.z));
+
+		//projection matrix: view -> clip
+		glm::mat4 projection = glm::perspective(glm::radians(45.0f), (float)(WIDTH / HEIGHT), 0.1f, 100.0f);
+
+		//middle square
 		texture1.setUnit(0);
 		texture2.setUnit(1);
 
@@ -232,8 +253,11 @@ int main() {
 		trans = glm::translate(trans, glm::vec3(0.5f, 0.5f, 0.0f));
 		trans = glm::rotate(trans, (float)glfwGetTime()*2, glm::vec3(0.0f, 0.0f, 1.0f));
 		
-		//middle square
 		shader4.use();
+		shader4.setUniformMat4("model", glm::value_ptr(model));
+		shader4.setUniformMat4("view", glm::value_ptr(view));
+		shader4.setUniformMat4("projection", glm::value_ptr(projection));
+
 		shader4.setUniformMat4("transform", glm::value_ptr(trans));
 		shader4.setUniformf("a", a);
 		square.draw(GL_TRIANGLES);
@@ -293,16 +317,54 @@ void processInput(GLFWwindow* window) {
 	}
 
 	//there's probably a better way to do this
-	if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS) {
+	if (glfwGetKey(window, GLFW_KEY_SLASH) == GLFW_PRESS) {
 		a += 0.01f;
 		if (a >= 1.0) {
 			a = 1.0f;
 		}
 	}
-	if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS) {
+	if (glfwGetKey(window, GLFW_KEY_PERIOD) == GLFW_PRESS) {
 		a -= 0.01f;
 		if (a <= 0.0) {
 			a = 0.0f;
+		}
+	}
+
+	//camera controls
+	if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS) {
+		camera.z += 0.01f;
+		if (camera.z >= 3.0) {
+			camera.z = 3.0f;
+		}
+	}
+	if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS) {
+		camera.z -= 0.01f;
+		if (camera.z <= -3.0) {
+			camera.z = -3.0f;
+		}
+	}
+	if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS) {
+		camera.x += 0.01f;
+		if (camera.x >= 3.0) {
+			camera.x = 3.0f;
+		}
+	}
+	if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS) {
+		camera.x -= 0.01f;
+		if (camera.x <= -3.0) {
+			camera.x = -3.0f;
+		}
+	}
+	if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS) {
+		camera.y += 0.01f;
+		if (camera.y >= 3.0) {
+			camera.y = 3.0f;
+		}
+	}
+	if (glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS) {
+		camera.y -= 0.01f;
+		if (camera.y <= -3.0) {
+			camera.y = -3.0f;
 		}
 	}
 }
