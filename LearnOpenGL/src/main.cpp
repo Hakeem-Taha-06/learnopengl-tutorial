@@ -51,17 +51,11 @@ void processInput(GLFWwindow* window, float deltaTime);
 float texInterp = 0.0f;
 float FOV = 45.0f;
 
-//camera properties
-glm::vec3 cameraPos  {0.0f, 0.0f, 3.0f};
-glm::vec3 cameraFront{0.0f, 0.0f, -1.0f};
-glm::vec3 cameraUp   {0.0f, 1.0f, 0.0f};
-float cameraSpeed = 3.0f;
-double cameraPitch = 0.0f;
-double cameraYaw = -90.0f;
+//camera 
+Camera camera{};
 
 //cursor properties
 double mouseLastX = WIDTH / 2, mouseLastY = HEIGHT / 2;
-double mouseSensitivity = 0.1f;
 bool firstMouse = true;
 
 //delta time
@@ -306,10 +300,10 @@ int main() {
 
 		//view matrix: world -> view
 		glm::mat4 view(1.0f);
-		view = glm::lookAt(cameraPos, cameraFront+ cameraPos, cameraUp);
+		view = camera.getViewMatrix();
 
 		//projection matrix: view -> clip
-		glm::mat4 projection = glm::perspective(glm::radians(FOV), (float)WIDTH / (float)HEIGHT, 0.1f, 100.0f);
+		glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), (float)WIDTH / (float)HEIGHT, 0.1f, 100.0f);
 
 		texture1.setUnit(0);
 		texture2.setUnit(1);
@@ -367,47 +361,16 @@ void onCursorMove(GLFWwindow* window, double xpos, double ypos) {
 		firstMouse = false;
 	}
 
-	double xOffset = (xpos - mouseLastX) * mouseSensitivity;
-	double yOffset = (mouseLastY - ypos) * mouseSensitivity; //flip y
+	double xoffset = (xpos - mouseLastX);
+	double yoffset = (mouseLastY - ypos); //flip y
 	mouseLastX = xpos;
 	mouseLastY = ypos;
 
-	cameraYaw += xOffset;
-	cameraPitch += yOffset;
-	//limit the pitch to prevent flipping
-	if (cameraPitch > 89.0f)
-		cameraPitch = 89.0f;
-	if (cameraPitch < -89.0f)
-		cameraPitch = -89.0f;
-
-	//to make the debug output more readable, limit the ranger from -180 to 180
-	if (cameraYaw >= 180) 
-		cameraYaw -= 360;
-	if (cameraYaw <= -180)
-		cameraYaw += 360;
-	
-
-	std::cout << "pitch: " << cameraPitch << std::endl;
-	std::cout << "yaw: " << cameraYaw << std::endl;
-
-	glm::vec3 direction{
-		std::cos(glm::radians(cameraPitch)) * std::cos(glm::radians(cameraYaw)),
-		std::sin(glm::radians(cameraPitch)),
-		std::cos(glm::radians(cameraPitch)) * std::sin(glm::radians(cameraYaw)),
-	};
-	cameraFront = glm::normalize(direction);
+	camera.processMouseMovement((float)xoffset, (float)yoffset);
 }
 
 void onMouseScroll(GLFWwindow* window, double xoffset, double yoffset) {
-	
-	FOV -= (float)yoffset;
-	if (FOV >= 45.0) {
-		FOV = 45.0f;
-	}
-	if (FOV <= 1.0) {
-		FOV = 1.0f;
-	}
-	std::cout << "FOV: " << FOV << std::endl;
+	camera.processMouseScroll((float)yoffset);
 }
 
 
@@ -437,17 +400,12 @@ void processInput(GLFWwindow* window, float deltaTime) {
 		}
 	}
 
-	//camera controls
-	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
-		cameraPos += cameraSpeed * cameraFront * deltaTime;
-	}
-	if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
-		cameraPos -= cameraSpeed * cameraFront * deltaTime;
-	}
-	if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
-		cameraPos -= cameraSpeed * glm::normalize(glm::cross(cameraFront,cameraUp)) * deltaTime;
-	}
-	if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
-		cameraPos += cameraSpeed * glm::normalize(glm::cross(cameraFront, cameraUp)) * deltaTime;
-	}
+	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
+		camera.processKeyInput(FORWARD, deltaTime);
+	if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
+		camera.processKeyInput(BACKWARD, deltaTime);
+	if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
+		camera.processKeyInput(LEFT, deltaTime);
+	if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
+		camera.processKeyInput(RIGHT, deltaTime);
 }
