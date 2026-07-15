@@ -28,10 +28,11 @@ const int HEIGHT = 600;
 const Color BG_BLUE{ 0.2f, 0.3f, 0.5f, 1.0f };
 const Color BORDER{ 0.2f, 0.2f, 0.2f, 1.0f };
 
+//TODO: remove old camera stuff
 auto camera = glm::vec3(10.0f, 50.0f, 10.0f);
 
 constexpr auto CAMERA_LIMIT = glm::vec3(100.0f, 100.0f, 100.0f);
-constexpr auto cameraSpeed = 10.0f;
+constexpr auto CAMERA_SPEED = 10.0f;
 
 //shader source paths
 #ifdef DEBUG
@@ -50,14 +51,18 @@ void OnWindowClose(GLFWwindow* window);
 
 //core
 void setGLFWEventCallbacks(GLFWwindow* window);
-void processInput(GLFWwindow* window);
+void processInput(GLFWwindow* window, float deltaTime);
 
 float texInterp = 0.0f;
 float FOV = 45.0f;
 
-glm::mat4 view{ 1.0f };
+glm::vec3 cameraPos  {0.0f, 0.0f, 3.0f};
+glm::vec3 cameraFront{0.0f, 0.0f, -1.0f};
+glm::vec3 cameraUp   {0.0f, 1.0f, 0.0f};
+float cameraSpeed = 3.0f;
 
-Camera cam{};
+float deltaTime = 0.0f;
+float lastFrame = 0.0f;
 
 int main() {
 
@@ -268,18 +273,18 @@ int main() {
 
 	std::print("vector: ({}, {}, {})\n", vector.x, vector.y, vector.z);
 
-	//------------------ camera ------------------
-	cam.setPosition(glm::vec3());
-	cam.setTarget(glm::vec3(1.0f, 0.0f, 0.0f));
-
 	//for wireframe
 	//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
 	//----------------------- main loop -----------------------
 	while (!glfwWindowShouldClose(window)) {
 
+		float currentFrame = (float)glfwGetTime();
+		deltaTime = currentFrame - lastFrame;
+		lastFrame = currentFrame;
+
 		//input
-		processInput(window);
+		processInput(window, deltaTime);
 
 		//rendering
 		glClearColor(BG_BLUE.r, 
@@ -294,10 +299,8 @@ int main() {
 		model = glm::rotate(model, glm::radians(-55.0f), glm::vec3(1.0f, 0.0f, 0.0f));
 
 		//view matrix: world -> view
-		/*glm::mat4 view(1.0f);
-		view = glm::translate(view, -camera);*/
-
-
+		glm::mat4 view(1.0f);
+		view = glm::lookAt(cameraPos, cameraFront+ cameraPos, cameraUp);
 
 		//projection matrix: view -> clip
 		glm::mat4 projection = glm::perspective(glm::radians(FOV), (float)WIDTH / (float)HEIGHT, 0.1f, 100.0f);
@@ -355,7 +358,7 @@ void setGLFWEventCallbacks(GLFWwindow* window) {
 	glfwSetWindowCloseCallback(window, OnWindowClose);
 }
 
-void processInput(GLFWwindow* window) {
+void processInput(GLFWwindow* window, float deltaTime) {
 	if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
 		glfwSetWindowShouldClose(window, 1);
 	}
@@ -374,54 +377,56 @@ void processInput(GLFWwindow* window) {
 		}
 	}
 
-	//camera controls
+	//TODO: remove old camera controls
 	if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS) {
-		camera.z += 0.01f * cameraSpeed;
+		camera.z += 0.01f * CAMERA_SPEED;
 		if (camera.z >= CAMERA_LIMIT.z) {
 			camera.z = CAMERA_LIMIT.z;
 		}
-
-		view = cam.move(0.01f * cameraSpeed * glm::vec3(0.0f, 0.0f, 1.0f));
 	}
 	if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS) {
-		camera.z -= 0.01f * cameraSpeed;
+		camera.z -= 0.01f * CAMERA_SPEED;
 		if (camera.z <= -CAMERA_LIMIT.z) {
 			camera.z = -CAMERA_LIMIT.z;
 		}
-
-		view = cam.move(0.01f * cameraSpeed * glm::vec3(0.0f, 0.0f, -1.0f));
 	}
 	if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS) {
-		camera.x += 0.01f * cameraSpeed;
+		camera.x += 0.01f * CAMERA_SPEED;
 		if (camera.x >= CAMERA_LIMIT.x) {
 			camera.x = CAMERA_LIMIT.x;
 		}
-
-		view = cam.move(0.01f * cameraSpeed * glm::vec3(1.0f, 0.0f, 0.0f));
 	}
 	if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS) {
-		camera.x -= 0.01f * cameraSpeed;
+		camera.x -= 0.01f * CAMERA_SPEED;
 		if (camera.x <= -CAMERA_LIMIT.x) {
 			camera.x = -CAMERA_LIMIT.x;
 		}
-
-		//view = cam.move(0.01f * cameraSpeed * glm::vec3(-1.0f, 0.0f, 0.0f));
 	}
 	if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS) {
-		camera.y += 0.01f * cameraSpeed;
+		camera.y += 0.01f * CAMERA_SPEED;
 		if (camera.y >= CAMERA_LIMIT.y) {
 			camera.y = CAMERA_LIMIT.y;
 		}
-
-		view = cam.move(0.01f * cameraSpeed * glm::vec3(0.0f, 1.0f, 0.0f));
 	}
 	if (glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS) {
-		camera.y -= 0.01f * cameraSpeed;
+		camera.y -= 0.01f * CAMERA_SPEED;
 		if (camera.y <= -CAMERA_LIMIT.y) {
 			camera.y = -CAMERA_LIMIT.y;
 		}
+	}
 
-		view = cam.move(0.01f * cameraSpeed * glm::vec3(0.0f, -1.0f, 0.0f));
+	//camera controls
+	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
+		cameraPos += cameraSpeed * cameraFront * deltaTime;
+	}
+	if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
+		cameraPos -= cameraSpeed * cameraFront * deltaTime;
+	}
+	if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
+		cameraPos -= cameraSpeed * glm::normalize(glm::cross(cameraFront,cameraUp)) * deltaTime;
+	}
+	if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
+		cameraPos += cameraSpeed * glm::normalize(glm::cross(cameraFront, cameraUp)) * deltaTime;
 	}
 
 	if (glfwGetKey(window, GLFW_KEY_M) == GLFW_PRESS) {

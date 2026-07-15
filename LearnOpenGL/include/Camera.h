@@ -7,6 +7,7 @@
 
 #include <iostream>
 
+//TODO: refactor the camera class with a better system
 class Camera {
 public:
 
