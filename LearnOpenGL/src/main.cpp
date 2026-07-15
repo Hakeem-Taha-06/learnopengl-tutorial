@@ -1,27 +1,24 @@
-#include "glad/glad.h"
-#include "GLFW/glfw3.h"
+#include <glad/glad.h>
+#include <GLFW/glfw3.h>
 
-#include "stb/stb_image.h"
+#include <stb/stb_image.h>
 
-#include "glm/glm.hpp"
-#include "glm/gtc/matrix_transform.hpp"
-#include "glm/gtc/type_ptr.hpp"
-
-#include "Shader.h"
-#include "Shape.h"
-#include "Texture.h"
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
 
 #include <iostream>
 #include <cmath>
 #include <print>
 
+#include "Shader.h"
+#include "Shape.h"
+#include "Texture.h"
+#include "Camera.h"
+
 typedef struct {
 	float r, g, b, a;
 }Color;
-
-typedef struct {
-	float x, y, z;
-}Camera;
 
 //window specs
 const int WIDTH = 600;
@@ -57,6 +54,10 @@ void processInput(GLFWwindow* window);
 
 float texInterp = 0.0f;
 float FOV = 45.0f;
+
+glm::mat4 view{ 1.0f };
+
+Camera cam{};
 
 int main() {
 
@@ -267,6 +268,10 @@ int main() {
 
 	std::print("vector: ({}, {}, {})\n", vector.x, vector.y, vector.z);
 
+	//------------------ camera ------------------
+	cam.setPosition(glm::vec3());
+	cam.setTarget(glm::vec3(1.0f, 0.0f, 0.0f));
+
 	//for wireframe
 	//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
@@ -289,8 +294,10 @@ int main() {
 		model = glm::rotate(model, glm::radians(-55.0f), glm::vec3(1.0f, 0.0f, 0.0f));
 
 		//view matrix: world -> view
-		glm::mat4 view(1.0f);
-		view = glm::translate(view, -camera);
+		/*glm::mat4 view(1.0f);
+		view = glm::translate(view, -camera);*/
+
+
 
 		//projection matrix: view -> clip
 		glm::mat4 projection = glm::perspective(glm::radians(FOV), (float)WIDTH / (float)HEIGHT, 0.1f, 100.0f);
@@ -373,36 +380,48 @@ void processInput(GLFWwindow* window) {
 		if (camera.z >= CAMERA_LIMIT.z) {
 			camera.z = CAMERA_LIMIT.z;
 		}
+
+		view = cam.move(0.01f * cameraSpeed * glm::vec3(0.0f, 0.0f, 1.0f));
 	}
 	if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS) {
 		camera.z -= 0.01f * cameraSpeed;
 		if (camera.z <= -CAMERA_LIMIT.z) {
 			camera.z = -CAMERA_LIMIT.z;
 		}
+
+		view = cam.move(0.01f * cameraSpeed * glm::vec3(0.0f, 0.0f, -1.0f));
 	}
 	if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS) {
 		camera.x += 0.01f * cameraSpeed;
 		if (camera.x >= CAMERA_LIMIT.x) {
 			camera.x = CAMERA_LIMIT.x;
 		}
+
+		view = cam.move(0.01f * cameraSpeed * glm::vec3(1.0f, 0.0f, 0.0f));
 	}
 	if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS) {
 		camera.x -= 0.01f * cameraSpeed;
 		if (camera.x <= -CAMERA_LIMIT.x) {
 			camera.x = -CAMERA_LIMIT.x;
 		}
+
+		//view = cam.move(0.01f * cameraSpeed * glm::vec3(-1.0f, 0.0f, 0.0f));
 	}
 	if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS) {
 		camera.y += 0.01f * cameraSpeed;
 		if (camera.y >= CAMERA_LIMIT.y) {
 			camera.y = CAMERA_LIMIT.y;
 		}
+
+		view = cam.move(0.01f * cameraSpeed * glm::vec3(0.0f, 1.0f, 0.0f));
 	}
 	if (glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS) {
 		camera.y -= 0.01f * cameraSpeed;
 		if (camera.y <= -CAMERA_LIMIT.y) {
 			camera.y = -CAMERA_LIMIT.y;
 		}
+
+		view = cam.move(0.01f * cameraSpeed * glm::vec3(0.0f, -1.0f, 0.0f));
 	}
 
 	if (glfwGetKey(window, GLFW_KEY_M) == GLFW_PRESS) {

@@ -16,6 +16,7 @@
       <Filter>include</Filter>
     </ClInclude>
     <ClInclude Include="include\Texture.h" />
+    <ClInclude Include="include\Camera.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\glad.c">
