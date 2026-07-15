@@ -28,12 +28,6 @@ const int HEIGHT = 600;
 const Color BG_BLUE{ 0.2f, 0.3f, 0.5f, 1.0f };
 const Color BORDER{ 0.2f, 0.2f, 0.2f, 1.0f };
 
-//TODO: remove old camera stuff
-auto camera = glm::vec3(10.0f, 50.0f, 10.0f);
-
-constexpr auto CAMERA_LIMIT = glm::vec3(100.0f, 100.0f, 100.0f);
-constexpr auto CAMERA_SPEED = 10.0f;
-
 //shader source paths
 #ifdef DEBUG
 	std::string SHADER_SOURCE_PATH = "src/shaders/";
@@ -48,6 +42,7 @@ constexpr auto CAMERA_SPEED = 10.0f;
 //event callbacks
 void OnFrameBufferResize(GLFWwindow* window, int width, int height);
 void OnWindowClose(GLFWwindow* window);
+void onCursorMove(GLFWwindow* window, double xpos, double ypos);
 
 //core
 void setGLFWEventCallbacks(GLFWwindow* window);
@@ -56,11 +51,20 @@ void processInput(GLFWwindow* window, float deltaTime);
 float texInterp = 0.0f;
 float FOV = 45.0f;
 
+//camera properties
 glm::vec3 cameraPos  {0.0f, 0.0f, 3.0f};
 glm::vec3 cameraFront{0.0f, 0.0f, -1.0f};
 glm::vec3 cameraUp   {0.0f, 1.0f, 0.0f};
 float cameraSpeed = 3.0f;
+double cameraPitch = 0.0f;
+double cameraYaw = -90.0f;
 
+//cursor properties
+double mouseLastX = WIDTH / 2, mouseLastY = HEIGHT / 2;
+double mouseSensitivity = 0.1f;
+bool firstMouse = true;
+
+//delta time
 float deltaTime = 0.0f;
 float lastFrame = 0.0f;
 
@@ -89,7 +93,12 @@ int main() {
 	//set the window as the current context
 	//context is the set of properties that define opengl's state
 	glfwMakeContextCurrent(window);
+	
+	//Vsync on
 	glfwSwapInterval(1);
+
+	//hides the cursor and sets it to the middle of the window
+	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
 	//init GLAD by giving it the platform specific function that loads openGL's function pointers
 	//glfw provides a function that does that vvvvvvv
@@ -220,7 +229,6 @@ int main() {
 	};
 
 	std::vector<unsigned int> cubeIndices = {
-
 		//top
 		4, 5, 6,
 		6, 7, 4,
@@ -228,8 +236,6 @@ int main() {
 		//front
 		16, 17, 18,
 		18, 19, 16,
-
-		
 	};
 
 	//---------------------------------------------------------------------------------
@@ -320,7 +326,6 @@ int main() {
 		//trans = glm::rotate(trans, -(float)glfwGetTime() * 2, glm::vec3(0.0f, 0.0f, 1.0f));
 
 		shader4.setUniformMat4("transform", glm::value_ptr(trans));
-		cube.draw(GL_TRIANGLES);
 		for (int i = 0; i < 50; ++i) {
 			for (int j = 0; j < 50; ++j) {
 				model = glm::mat4(1.0f);
@@ -330,6 +335,7 @@ int main() {
 				cube.draw(GL_TRIANGLES);
 			}
 		}
+
 		/*GLenum err;
 		while ((err = glGetError()) != GL_NO_ERROR) {
 			std::cout << "GL error: " << err << std::endl;
@@ -353,9 +359,63 @@ void OnWindowClose(GLFWwindow* window) {
 	std::cout << "Closing window..." << std::endl;
 }
 
+void onCursorMove(GLFWwindow* window, double xpos, double ypos) {
+
+	if (firstMouse) {
+		mouseLastX = xpos;
+		mouseLastY = ypos;
+		firstMouse = false;
+	}
+
+	double xOffset = (xpos - mouseLastX) * mouseSensitivity;
+	double yOffset = (mouseLastY - ypos) * mouseSensitivity; //flip y
+	mouseLastX = xpos;
+	mouseLastY = ypos;
+
+	cameraYaw += xOffset;
+	cameraPitch += yOffset;
+	//limit the pitch to prevent flipping
+	if (cameraPitch > 89.0f)
+		cameraPitch = 89.0f;
+	if (cameraPitch < -89.0f)
+		cameraPitch = -89.0f;
+
+	//to make the debug output more readable, limit the ranger from -180 to 180
+	if (cameraYaw >= 180) 
+		cameraYaw -= 360;
+	if (cameraYaw <= -180)
+		cameraYaw += 360;
+	
+
+	std::cout << "pitch: " << cameraPitch << std::endl;
+	std::cout << "yaw: " << cameraYaw << std::endl;
+
+	glm::vec3 direction{
+		std::cos(glm::radians(cameraPitch)) * std::cos(glm::radians(cameraYaw)),
+		std::sin(glm::radians(cameraPitch)),
+		std::cos(glm::radians(cameraPitch)) * std::sin(glm::radians(cameraYaw)),
+	};
+	cameraFront = glm::normalize(direction);
+}
+
+void onMouseScroll(GLFWwindow* window, double xoffset, double yoffset) {
+	
+	FOV -= (float)yoffset;
+	if (FOV >= 45.0) {
+		FOV = 45.0f;
+	}
+	if (FOV <= 1.0) {
+		FOV = 1.0f;
+	}
+	std::cout << "FOV: " << FOV << std::endl;
+}
+
+
 void setGLFWEventCallbacks(GLFWwindow* window) {
 	glfwSetFramebufferSizeCallback(window, OnFrameBufferResize);
 	glfwSetWindowCloseCallback(window, OnWindowClose);
+	glfwSetCursorPosCallback(window, onCursorMove);
+	glfwSetScrollCallback(window, onMouseScroll);
 }
 
 void processInput(GLFWwindow* window, float deltaTime) {
@@ -377,44 +437,6 @@ void processInput(GLFWwindow* window, float deltaTime) {
 		}
 	}
 
-	//TODO: remove old camera controls
-	if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS) {
-		camera.z += 0.01f * CAMERA_SPEED;
-		if (camera.z >= CAMERA_LIMIT.z) {
-			camera.z = CAMERA_LIMIT.z;
-		}
-	}
-	if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS) {
-		camera.z -= 0.01f * CAMERA_SPEED;
-		if (camera.z <= -CAMERA_LIMIT.z) {
-			camera.z = -CAMERA_LIMIT.z;
-		}
-	}
-	if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS) {
-		camera.x += 0.01f * CAMERA_SPEED;
-		if (camera.x >= CAMERA_LIMIT.x) {
-			camera.x = CAMERA_LIMIT.x;
-		}
-	}
-	if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS) {
-		camera.x -= 0.01f * CAMERA_SPEED;
-		if (camera.x <= -CAMERA_LIMIT.x) {
-			camera.x = -CAMERA_LIMIT.x;
-		}
-	}
-	if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS) {
-		camera.y += 0.01f * CAMERA_SPEED;
-		if (camera.y >= CAMERA_LIMIT.y) {
-			camera.y = CAMERA_LIMIT.y;
-		}
-	}
-	if (glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS) {
-		camera.y -= 0.01f * CAMERA_SPEED;
-		if (camera.y <= -CAMERA_LIMIT.y) {
-			camera.y = -CAMERA_LIMIT.y;
-		}
-	}
-
 	//camera controls
 	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
 		cameraPos += cameraSpeed * cameraFront * deltaTime;
@@ -427,20 +449,5 @@ void processInput(GLFWwindow* window, float deltaTime) {
 	}
 	if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
 		cameraPos += cameraSpeed * glm::normalize(glm::cross(cameraFront, cameraUp)) * deltaTime;
-	}
-
-	if (glfwGetKey(window, GLFW_KEY_M) == GLFW_PRESS) {
-		FOV += 0.1f;
-		if (FOV >= 90.0) {
-			FOV = 90.0f;
-		}
-		std::cout << "FOV: " << FOV << std::endl;
-	}
-	if (glfwGetKey(window, GLFW_KEY_N) == GLFW_PRESS) {
-		FOV -= 0.1f;
-		if (FOV <= 0.0) {
-			FOV = 0.0f;
-		}
-		std::cout << "FOV: "<< FOV << std::endl;
 	}
 }
