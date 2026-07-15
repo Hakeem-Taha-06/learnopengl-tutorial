@@ -323,7 +323,6 @@ int main() {
 		for (int i = 0; i < 50; ++i) {
 			for (int j = 0; j < 50; ++j) {
 				model = glm::mat4(1.0f);
-				model = glm::rotate(model, glm::radians(-55.0f), glm::vec3(1.0f, 0.0f, 0.0f));
 				model = glm::translate(model, glm::vec3(i * 1.0f, j*1.0f, j * 1.0f));
 				shader4.setUniformMat4("model", glm::value_ptr(model));
 				cube.draw(GL_TRIANGLES);
@@ -408,4 +407,8 @@ void processInput(GLFWwindow* window, float deltaTime) {
 		camera.processKeyInput(LEFT, deltaTime);
 	if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
 		camera.processKeyInput(RIGHT, deltaTime);
+	if (glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS)
+		camera.processKeyInput(ASCEND, deltaTime);
+	if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS)
+		camera.processKeyInput(DESCEND, deltaTime);
 }

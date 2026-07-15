@@ -12,7 +12,9 @@ enum CameraMovement {
 	FORWARD,
 	BACKWARD,
 	LEFT,
-	RIGHT
+	RIGHT,
+	ASCEND,
+	DESCEND
 };
 
 //default attributes
@@ -47,6 +49,10 @@ public:
 			Position -= Speed * Right * deltaTime;
 		if (direction == RIGHT) 
 			Position += Speed * Right * deltaTime;
+		if (direction == ASCEND)
+			Position += Speed * WorldUp * deltaTime;
+		if (direction == DESCEND)
+			Position -= Speed * WorldUp * deltaTime;
 	}
 
 	void processMouseMovement(float xoffset, float yoffset) {
