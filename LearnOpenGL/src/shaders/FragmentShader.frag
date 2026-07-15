@@ -1,9 +1,15 @@
 #version 330 core
 out vec4 FragColor;
 
-in vec4 vertexPosition;
-uniform vec4 customColor;
+in vec3 color;
+in vec2 texCoord;
+
+uniform sampler2D texture1;
+uniform sampler2D texture2;
+
+uniform float texInterp;
 
 void main(){
-	FragColor = customColor + vertexPosition + vec4(0.5, 0.5, 0.5, 1.0);
+	FragColor =  mix(texture(texture1, texCoord),
+					 texture(texture2, texCoord), texInterp) * vec4(color, 1.0);
 }
