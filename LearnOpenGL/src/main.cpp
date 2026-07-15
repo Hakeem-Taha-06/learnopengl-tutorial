@@ -31,7 +31,10 @@ const int HEIGHT = 600;
 const Color BG_BLUE{ 0.2f, 0.3f, 0.5f, 1.0f };
 const Color BORDER{ 0.2f, 0.2f, 0.2f, 1.0f };
 
-Camera camera{0.0f, 0.0f, 3.0f};
+auto camera = glm::vec3(10.0f, 50.0f, 10.0f);
+
+constexpr auto CAMERA_LIMIT = glm::vec3(100.0f, 100.0f, 100.0f);
+constexpr auto cameraSpeed = 10.0f;
 
 //shader source paths
 #ifdef DEBUG
@@ -53,6 +56,7 @@ void setGLFWEventCallbacks(GLFWwindow* window);
 void processInput(GLFWwindow* window);
 
 float texInterp = 0.0f;
+float FOV = 45.0f;
 
 int main() {
 
@@ -169,15 +173,15 @@ int main() {
 		2, 3, 0,
 	};
 
-	std::vector<float> cubeVertices{ 
+	std::vector<float> cubeVertices{
 		//positions         //color            //texture coordinates
-		//back
+		//bottom
 		-0.5f,-0.5f,-0.5f,  1.0f, 0.0f, 0.0f,  0.0f, 0.0f,
 		 0.5f,-0.5f,-0.5f,  0.0f, 1.0f, 0.0f,  1.0f, 0.0f,
 		 0.5f, 0.5f,-0.5f,  0.0f, 0.0f, 1.0f,  1.0f, 1.0f,
 		-0.5f, 0.5f,-0.5f,  1.0f, 1.0f, 0.0f,  0.0f, 1.0f,
 
-		//front
+		//top
 		-0.5f,-0.5f, 0.5f,  1.0f, 0.0f, 0.0f,  0.0f, 0.0f,
 		 0.5f,-0.5f, 0.5f,  0.0f, 1.0f, 0.0f,  1.0f, 0.0f,
 		 0.5f, 0.5f, 0.5f,  0.0f, 0.0f, 1.0f,  1.0f, 1.0f,
@@ -195,43 +199,31 @@ int main() {
 		 0.5f,-0.5f,-0.5f,  0.0f, 0.0f, 1.0f,  0.0f, 1.0f,
 		 0.5f,-0.5f, 0.5f,  1.0f, 1.0f, 0.0f,  0.0f, 0.0f,
 
-		 //bottom
+
+		//back
 		-0.5f,-0.5f,-0.5f,  1.0f, 0.0f, 0.0f,  0.0f, 1.0f,
 		 0.5f,-0.5f,-0.5f,  0.0f, 1.0f, 0.0f,  1.0f, 1.0f,
 		 0.5f,-0.5f, 0.5f,  0.0f, 0.0f, 1.0f,  1.0f, 0.0f,
 		-0.5f,-0.5f, 0.5f,  1.0f, 1.0f, 0.0f,  0.0f, 0.0f,
 
-		//top
+		//front
 		-0.5f, 0.5f,-0.5f,  1.0f, 0.0f, 0.0f,  0.0f, 1.0f,
 		 0.5f, 0.5f,-0.5f,  0.0f, 1.0f, 0.0f,  1.0f, 1.0f,
 		 0.5f, 0.5f, 0.5f,  0.0f, 0.0f, 1.0f,  1.0f, 0.0f,
 		-0.5f, 0.5f, 0.5f,  1.0f, 1.0f, 0.0f,  0.0f, 0.0f,
 	};
 
-	std::vector<unsigned int> cubeIndices= {
-		//back
-		0, 1, 2,
-		2, 3, 0,
+	std::vector<unsigned int> cubeIndices = {
 
-		//front
+		//top
 		4, 5, 6,
 		6, 7, 4,
 
-		//left
-		8, 9, 10,
-		10, 11, 8,
-
-		//right
-		12, 13, 14, 
-		14, 15, 12,
-
-		//bottom
+		//front
 		16, 17, 18,
 		18, 19, 16,
 
-		//top
-		20, 21, 22,
-		22, 23, 20,
+		
 	};
 
 	//---------------------------------------------------------------------------------
@@ -256,8 +248,8 @@ int main() {
 	cube.create(VertexDataShape::PosColTex3d, GL_STATIC_DRAW);
 
 	//texture stuff
-	Texture texture1((ASSETS_PATH + "textures/urara_ballin.png").c_str());
-	Texture texture2((ASSETS_PATH + "textures/cool_cat.png").c_str());
+	Texture texture1((ASSETS_PATH + "textures/cool_cat.png").c_str());
+	Texture texture2((ASSETS_PATH + "textures/urara_ballin.png").c_str());
 
 	shader4.use();
 	shader4.setUniformi("texture1", 0);
@@ -298,10 +290,10 @@ int main() {
 
 		//view matrix: world -> view
 		glm::mat4 view(1.0f);
-		view = glm::translate(view, glm::vec3(-camera.x, -camera.y, -camera.z));
+		view = glm::translate(view, -camera);
 
 		//projection matrix: view -> clip
-		glm::mat4 projection = glm::perspective(glm::radians(45.0f), (float)WIDTH / (float)HEIGHT, 0.1f, 100.0f);
+		glm::mat4 projection = glm::perspective(glm::radians(FOV), (float)WIDTH / (float)HEIGHT, 0.1f, 100.0f);
 
 		texture1.setUnit(0);
 		texture2.setUnit(1);
@@ -314,13 +306,20 @@ int main() {
 		shader4.setUniformMat4("view", glm::value_ptr(view));
 		shader4.setUniformMat4("projection", glm::value_ptr(projection));
 
-
 		trans = glm::mat4(1.0f);
-		trans = glm::rotate(trans, -(float)glfwGetTime() * 2, glm::vec3(0.0f, 0.0f, 1.0f));
+		//trans = glm::rotate(trans, -(float)glfwGetTime() * 2, glm::vec3(0.0f, 0.0f, 1.0f));
 
 		shader4.setUniformMat4("transform", glm::value_ptr(trans));
 		cube.draw(GL_TRIANGLES);
-
+		for (int i = 0; i < 50; ++i) {
+			for (int j = 0; j < 50; ++j) {
+				model = glm::mat4(1.0f);
+				model = glm::rotate(model, glm::radians(-55.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+				model = glm::translate(model, glm::vec3(i * 1.0f, j*1.0f, j * 1.0f));
+				shader4.setUniformMat4("model", glm::value_ptr(model));
+				cube.draw(GL_TRIANGLES);
+			}
+		}
 		/*GLenum err;
 		while ((err = glGetError()) != GL_NO_ERROR) {
 			std::cout << "GL error: " << err << std::endl;
@@ -370,39 +369,54 @@ void processInput(GLFWwindow* window) {
 
 	//camera controls
 	if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS) {
-		camera.z += 0.01f;
-		if (camera.z >= 10.0) {
-			camera.z = 10.0f;
+		camera.z += 0.01f * cameraSpeed;
+		if (camera.z >= CAMERA_LIMIT.z) {
+			camera.z = CAMERA_LIMIT.z;
 		}
 	}
 	if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS) {
-		camera.z -= 0.01f;
-		if (camera.z <= -10.0) {
-			camera.z = -10.0f;
+		camera.z -= 0.01f * cameraSpeed;
+		if (camera.z <= -CAMERA_LIMIT.z) {
+			camera.z = -CAMERA_LIMIT.z;
 		}
 	}
 	if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS) {
-		camera.x += 0.01f;
-		if (camera.x >= 10.0) {
-			camera.x = 10.0f;
+		camera.x += 0.01f * cameraSpeed;
+		if (camera.x >= CAMERA_LIMIT.x) {
+			camera.x = CAMERA_LIMIT.x;
 		}
 	}
 	if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS) {
-		camera.x -= 0.01f;
-		if (camera.x <= -10.0) {
-			camera.x = -10.0f;
+		camera.x -= 0.01f * cameraSpeed;
+		if (camera.x <= -CAMERA_LIMIT.x) {
+			camera.x = -CAMERA_LIMIT.x;
 		}
 	}
 	if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS) {
-		camera.y += 0.01f;
-		if (camera.y >= 10.0) {
-			camera.y = 10.0f;
+		camera.y += 0.01f * cameraSpeed;
+		if (camera.y >= CAMERA_LIMIT.y) {
+			camera.y = CAMERA_LIMIT.y;
 		}
 	}
 	if (glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS) {
-		camera.y -= 0.01f;
-		if (camera.y <= -10.0) {
-			camera.y = -10.0f;
+		camera.y -= 0.01f * cameraSpeed;
+		if (camera.y <= -CAMERA_LIMIT.y) {
+			camera.y = -CAMERA_LIMIT.y;
 		}
+	}
+
+	if (glfwGetKey(window, GLFW_KEY_M) == GLFW_PRESS) {
+		FOV += 0.1f;
+		if (FOV >= 90.0) {
+			FOV = 90.0f;
+		}
+		std::cout << "FOV: " << FOV << std::endl;
+	}
+	if (glfwGetKey(window, GLFW_KEY_N) == GLFW_PRESS) {
+		FOV -= 0.1f;
+		if (FOV <= 0.0) {
+			FOV = 0.0f;
+		}
+		std::cout << "FOV: "<< FOV << std::endl;
 	}
 }
