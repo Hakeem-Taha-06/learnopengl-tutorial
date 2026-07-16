@@ -148,10 +148,10 @@ int main() {
 	cube.create(PosColNormTex3d, GL_STATIC_DRAW);
 
 	Shape light(cubeVertices, cubeIndices);
-	light.create(PosColNormTex3d, GL_STATIC_DRAW);
 	//reuse the cube's buffers since they are already sent to the gpu
 	light.setVBO(cube.getVBO());
 	light.setEBO(cube.getEBO());
+	light.create(PosColNormTex3d, GL_STATIC_DRAW);
 
 	//texture stuff
 	Texture texture1((ASSETS_PATH + "textures/cool_cat.png").c_str());
