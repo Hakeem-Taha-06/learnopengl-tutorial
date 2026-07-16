@@ -202,7 +202,10 @@ int main() {
 		
 		cubeShader.setUniformf("lightColor", 1.0f, 1.0f, 1.0f);
 		cubeShader.setUniformf("ambientStrength", 0.2f);
-		cubeShader.setUniformf("lightPos", lightPos.x, lightPos.y, lightPos.z);
+		cubeShader.setUniformf("specularStrength", 0.5f);
+		cubeShader.setUniformVec3("lightPos", lightPos);
+		cubeShader.setUniformVec3("cameraPos", camera.Position);
+		cubeShader.setUniformf("shine", 32);
 
 		cube.draw(GL_TRIANGLES);
 

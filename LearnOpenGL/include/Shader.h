@@ -37,6 +37,9 @@ public:
 	//matrix uniform
 	void setUniformMat4(const char* name, const float* matrix);
 
+	//specific vector uniforms (same as float but easier to input)
+	void setUniformVec3(const char* name, glm::vec3 v);
+
 private:
 	std::string _readFile(const char* path);
 	void _createShader(const char* sourcePath, GLenum shaderType, unsigned int* shader);
@@ -182,4 +185,9 @@ void Shader::setUniformui(const char* name, unsigned int v1, unsigned int v2, un
 //matrix uniform
 void Shader::setUniformMat4(const char* name, const float* matrix) {
 	glUniformMatrix4fv(glGetUniformLocation(m_ID, name), 1, GL_FALSE, matrix);
+}
+
+//specific vector uniforms (same as float but easier to input)
+void Shader::setUniformVec3(const char* name, glm::vec3 v) {
+	glUniform3f(glGetUniformLocation(m_ID, name), v.x, v.y, v.z);
 }
