@@ -73,8 +73,8 @@ public:
 		if (Yaw <= -180)
 			Yaw += 360;
 
-		std::cout << "pitch: " << Pitch << std::endl;
-		std::cout << "yaw: " << Yaw << std::endl;
+		//std::cout << "pitch: " << Pitch << std::endl;
+		//std::cout << "yaw: " << Yaw << std::endl;
 
 		updateCameraVectors();
 	}

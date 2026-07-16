@@ -53,7 +53,10 @@ float texInterp = 0.0f;
 float FOV = 45.0f;
 
 //camera 
-Camera camera{};
+Camera camera{glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 1.0f, 0.0f) ,-30.0f, -135.0f, 3.0f};
+
+//light
+glm::vec3 lightPos{ 0.5f, 1.0f, -1.0f };
 
 //cursor properties
 double mouseLastX = WIDTH / 2, mouseLastY = HEIGHT / 2;
@@ -68,72 +71,95 @@ int main() {
 	GLFWwindow* window = Init();
 
 	//create the shader program that uses the vertex and fragment shaders in the shaders folder
-	Shader shader((SHADER_SOURCE_PATH + "VertexShader.vert").c_str(),
-				   (SHADER_SOURCE_PATH + "FragmentShader.frag").c_str());
+	Shader cubeShader((SHADER_SOURCE_PATH + "TextureVertexShader.vert").c_str(),
+				      (SHADER_SOURCE_PATH + "TextureFragmentShader.frag").c_str());
+	Shader lightShader((SHADER_SOURCE_PATH + "LightVertexShader.vert").c_str(),
+		               (SHADER_SOURCE_PATH + "LightFragmentShader.frag").c_str());
 
 	std::vector<float> cubeVertices{
-		//positions         //color            //texture coordinates
-		//bottom
-		-0.5f,-0.5f,-0.5f,  1.0f, 0.0f, 0.0f,  0.0f, 0.0f,
-		 0.5f,-0.5f,-0.5f,  0.0f, 1.0f, 0.0f,  1.0f, 0.0f,
-		 0.5f, 0.5f,-0.5f,  0.0f, 0.0f, 1.0f,  1.0f, 1.0f,
-		-0.5f, 0.5f,-0.5f,  1.0f, 1.0f, 0.0f,  0.0f, 1.0f,
-
-		//top
-		-0.5f,-0.5f, 0.5f,  1.0f, 0.0f, 0.0f,  0.0f, 0.0f,
-		 0.5f,-0.5f, 0.5f,  0.0f, 1.0f, 0.0f,  1.0f, 0.0f,
-		 0.5f, 0.5f, 0.5f,  0.0f, 0.0f, 1.0f,  1.0f, 1.0f,
-		-0.5f, 0.5f, 0.5f,  1.0f, 1.0f, 0.0f,  0.0f, 1.0f,
-
-		//left
-		-0.5f, 0.5f, 0.5f,  1.0f, 0.0f, 0.0f,  1.0f, 0.0f,
-		-0.5f, 0.5f,-0.5f,  0.0f, 1.0f, 0.0f,  1.0f, 1.0f,
-		-0.5f,-0.5f,-0.5f,  0.0f, 0.0f, 1.0f,  0.0f, 1.0f,
-		-0.5f,-0.5f, 0.5f,  1.0f, 1.0f, 0.0f,  0.0f, 0.0f,
-
-		//right
-		 0.5f, 0.5f, 0.5f,  1.0f, 0.0f, 0.0f,  1.0f, 0.0f,
-		 0.5f, 0.5f,-0.5f,  0.0f, 1.0f, 0.0f,  1.0f, 1.0f,
-		 0.5f,-0.5f,-0.5f,  0.0f, 0.0f, 1.0f,  0.0f, 1.0f,
-		 0.5f,-0.5f, 0.5f,  1.0f, 1.0f, 0.0f,  0.0f, 0.0f,
-
-
+		//positions         //color             //normals           //texture coordinates
 		//back
-		-0.5f,-0.5f,-0.5f,  1.0f, 0.0f, 0.0f,  0.0f, 1.0f,
-		 0.5f,-0.5f,-0.5f,  0.0f, 1.0f, 0.0f,  1.0f, 1.0f,
-		 0.5f,-0.5f, 0.5f,  0.0f, 0.0f, 1.0f,  1.0f, 0.0f,
-		-0.5f,-0.5f, 0.5f,  1.0f, 1.0f, 0.0f,  0.0f, 0.0f,
+		-0.5f,-0.5f,-0.5f,  1.0f, 0.5f, 0.31f,  0.0f, 0.0f,-1.0f,  0.0f, 0.0f,
+		 0.5f,-0.5f,-0.5f,  1.0f, 0.5f, 0.31f,  0.0f, 0.0f,-1.0f,  1.0f, 0.0f,
+		 0.5f, 0.5f,-0.5f,  1.0f, 0.5f, 0.31f,  0.0f, 0.0f,-1.0f,  1.0f, 1.0f,
+		-0.5f, 0.5f,-0.5f,  1.0f, 0.5f, 0.31f,  0.0f, 0.0f,-1.0f,  0.0f, 1.0f,
 
 		//front
-		-0.5f, 0.5f,-0.5f,  1.0f, 0.0f, 0.0f,  0.0f, 1.0f,
-		 0.5f, 0.5f,-0.5f,  0.0f, 1.0f, 0.0f,  1.0f, 1.0f,
-		 0.5f, 0.5f, 0.5f,  0.0f, 0.0f, 1.0f,  1.0f, 0.0f,
-		-0.5f, 0.5f, 0.5f,  1.0f, 1.0f, 0.0f,  0.0f, 0.0f,
+		-0.5f,-0.5f, 0.5f,  1.0f, 0.5f, 0.31f,  0.0f, 0.0f, 1.0f,  0.0f, 0.0f,
+		 0.5f,-0.5f, 0.5f,  1.0f, 0.5f, 0.31f,  0.0f, 0.0f, 1.0f,  1.0f, 0.0f,
+		 0.5f, 0.5f, 0.5f,  1.0f, 0.5f, 0.31f,  0.0f, 0.0f, 1.0f,  1.0f, 1.0f,
+		-0.5f, 0.5f, 0.5f,  1.0f, 0.5f, 0.31f,  0.0f, 0.0f, 1.0f,  0.0f, 1.0f,
+
+		//left
+		-0.5f, 0.5f, 0.5f,  1.0f, 0.5f, 0.31f, -1.0f, 0.0f, 0.0f,  1.0f, 0.0f,
+		-0.5f, 0.5f,-0.5f,  1.0f, 0.5f, 0.31f, -1.0f, 0.0f, 0.0f,  1.0f, 1.0f,
+		-0.5f,-0.5f,-0.5f,  1.0f, 0.5f, 0.31f, -1.0f, 0.0f, 0.0f,  0.0f, 1.0f,
+		-0.5f,-0.5f, 0.5f,  1.0f, 0.5f, 0.31f, -1.0f, 0.0f, 0.0f,  0.0f, 0.0f,
+
+		//right
+		 0.5f, 0.5f, 0.5f,  1.0f, 0.5f, 0.31f,  1.0f, 0.0f, 0.0f,  1.0f, 0.0f,
+		 0.5f, 0.5f,-0.5f,  1.0f, 0.5f, 0.31f,  1.0f, 0.0f, 0.0f,  1.0f, 1.0f,
+		 0.5f,-0.5f,-0.5f,  1.0f, 0.5f, 0.31f,  1.0f, 0.0f, 0.0f,  0.0f, 1.0f,
+		 0.5f,-0.5f, 0.5f,  1.0f, 0.5f, 0.31f,  1.0f, 0.0f, 0.0f,  0.0f, 0.0f,
+
+		//bottom
+		-0.5f,-0.5f,-0.5f,  1.0f, 0.5f, 0.31f,  0.0f,-1.0f, 0.0f,  0.0f, 1.0f,
+		 0.5f,-0.5f,-0.5f,  1.0f, 0.5f, 0.31f,  0.0f,-1.0f, 0.0f,  1.0f, 1.0f,
+		 0.5f,-0.5f, 0.5f,  1.0f, 0.5f, 0.31f,  0.0f,-1.0f, 0.0f,  1.0f, 0.0f,
+		-0.5f,-0.5f, 0.5f,  1.0f, 0.5f, 0.31f,  0.0f,-1.0f, 0.0f,  0.0f, 0.0f,
+
+		//top
+		-0.5f, 0.5f,-0.5f,  1.0f, 0.5f, 0.31f,  0.0f, 1.0f, 0.0f,  0.0f, 1.0f,
+		 0.5f, 0.5f,-0.5f,  1.0f, 0.5f, 0.31f,  0.0f, 1.0f, 0.0f,  1.0f, 1.0f,
+		 0.5f, 0.5f, 0.5f,  1.0f, 0.5f, 0.31f,  0.0f, 1.0f, 0.0f,  1.0f, 0.0f,
+		-0.5f, 0.5f, 0.5f,  1.0f, 0.5f, 0.31f,  0.0f, 1.0f, 0.0f,  0.0f, 0.0f,
 	};
 
 	std::vector<unsigned int> cubeIndices = {
-		//top
+		//back
+		0, 1, 2,
+		2, 3, 0,
+
+		//front
 		4, 5, 6,
 		6, 7, 4,
 
-		//front
+		//left
+		8, 9, 10,
+		10, 11, 8,
+
+		//right
+		12, 13, 14,
+		14, 15, 12,
+
+		//bottom
 		16, 17, 18,
 		18, 19, 16,
+
+		//top
+		20, 21, 22,
+		22, 23, 20,
 	};
 
 	//---------------------------------------------------------------------------------
 
 	//------------------ cube data ------------------
 	Shape cube(cubeVertices, cubeIndices);
-	cube.create(VertexDataShape::PosColTex3d, GL_STATIC_DRAW);
+	cube.create(PosColNormTex3d, GL_STATIC_DRAW);
+
+	Shape light(cubeVertices, cubeIndices);
+	light.create(PosColNormTex3d, GL_STATIC_DRAW);
+	//reuse the cube's buffers since they are already sent to the gpu
+	light.setVBO(cube.getVBO());
+	light.setEBO(cube.getEBO());
 
 	//texture stuff
 	Texture texture1((ASSETS_PATH + "textures/cool_cat.png").c_str());
 	Texture texture2((ASSETS_PATH + "textures/urara_ballin.png").c_str());
 
-	shader.use();
-	shader.setUniformi("texture1", 0);
-	shader.setUniformi("texture2", 1);
+	cubeShader.use();
+	cubeShader.setUniformi("texture1", 0);
+	cubeShader.setUniformi("texture2", 1);
 
 	//for wireframe
 	//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
@@ -155,35 +181,44 @@ int main() {
 					 BG_BLUE.a);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+		cubeShader.use();
 		//coordinate transformation pipeline (MVP pipeline)
 		//model matrix: local -> world
 		glm::mat4 model(1.0f);
-		model = glm::rotate(model, glm::radians(-55.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-		shader.setUniformMat4("model", glm::value_ptr(model));
+		model = glm::translate(model, glm::vec3(0.0f, 0.0f, 0.0f));
+		cubeShader.setUniformMat4("model", glm::value_ptr(model));
 
 		//view matrix: world -> view
 		glm::mat4 view(1.0f);
 		view = camera.getViewMatrix();
-		shader.setUniformMat4("view", glm::value_ptr(view));
+		cubeShader.setUniformMat4("view", glm::value_ptr(view));
 
 		//projection matrix: view -> clip
 		glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), (float)WIDTH / (float)HEIGHT, 0.1f, 100.0f);
-		shader.setUniformMat4("projection", glm::value_ptr(projection));
+		cubeShader.setUniformMat4("projection", glm::value_ptr(projection));
 
 		texture1.setUnit(0);
 		texture2.setUnit(1);
 		
-		shader.use();
-		shader.setUniformf("texInterp", texInterp);
+		cubeShader.setUniformf("lightColor", 1.0f, 1.0f, 1.0f);
+		cubeShader.setUniformf("ambientStrength", 0.2f);
 
-		for (int i = 0; i < 50; ++i) {
-			for (int j = 0; j < 50; ++j) {
-				model = glm::mat4(1.0f);
-				model = glm::translate(model, glm::vec3(i * 1.0f, j*1.0f, j * 1.0f));
-				shader.setUniformMat4("model", glm::value_ptr(model));
-				cube.draw(GL_TRIANGLES);
-			}
-		}
+		cube.draw(GL_TRIANGLES);
+
+		lightShader.use();
+		model = glm::mat4(1.0f);
+		model = glm::translate(model, lightPos);
+		model = glm::scale(model, glm::vec3(0.2f));
+		lightShader.setUniformMat4("model", glm::value_ptr(model));
+
+		view = glm::mat4(1.0f);
+		view = camera.getViewMatrix();
+		lightShader.setUniformMat4("view", glm::value_ptr(view));
+
+		projection = glm::perspective(glm::radians(camera.Zoom), (float)WIDTH / (float)HEIGHT, 0.1f, 100.0f);
+		lightShader.setUniformMat4("projection", glm::value_ptr(projection));
+
+		light.draw(GL_TRIANGLES);
 
 		/*GLenum err;
 		while ((err = glGetError()) != GL_NO_ERROR) {
