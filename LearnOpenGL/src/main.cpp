@@ -56,7 +56,7 @@ float FOV = 45.0f;
 Camera camera{glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 1.0f, 0.0f) ,-30.0f, -135.0f, 3.0f};
 
 //light
-glm::vec3 lightPos{ 0.5f, 1.0f, -1.0f };
+glm::vec3 lightPos{ 0.5f, 0.8f, -0.5f };
 
 //cursor properties
 double mouseLastX = WIDTH / 2, mouseLastY = HEIGHT / 2;
@@ -202,6 +202,7 @@ int main() {
 		
 		cubeShader.setUniformf("lightColor", 1.0f, 1.0f, 1.0f);
 		cubeShader.setUniformf("ambientStrength", 0.2f);
+		cubeShader.setUniformf("lightPos", lightPos.x, lightPos.y, lightPos.z);
 
 		cube.draw(GL_TRIANGLES);
 
