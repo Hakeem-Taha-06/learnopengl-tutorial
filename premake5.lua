@@ -24,14 +24,14 @@ project "LearnOpenGL"
 
     includedirs
     {
-        "%{wks.location}/LearnOpenGL/dependencies/include",
+        "%{wks.location}/%{prj.name}/dependencies/include",
         "%{prj.name}/src",
         "%{prj.name}/include"
     }
 
     libdirs
     {
-        "%{wks.location}/LearnOpenGL/dependencies/libs"
+        "%{wks.location}/%{prj.name}/dependencies/libs"
     }
     
     links 
@@ -42,7 +42,7 @@ project "LearnOpenGL"
 
     postbuildcommands
     {
-        ('{COPY} "%{wks.location}/LearnOpenGL/src/shaders" "%{cfg.targetdir}/shaders/"') --copies the shaders to be in the same directory as the exe
+        ('{COPY} "%{wks.location}/%{prj.name}/src/shaders" "%{cfg.targetdir}/shaders/"') --copies the shaders to be in the same directory as the exe
     }
 
     cppdialect "C++17"

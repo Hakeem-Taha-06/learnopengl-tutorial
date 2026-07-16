@@ -63,7 +63,7 @@
       <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
       <Optimization>Disabled</Optimization>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
-      <LanguageStandard>stdcpplatest</LanguageStandard>
+      <LanguageStandard>stdcpp17</LanguageStandard>
       <ExternalWarningLevel>Level3</ExternalWarningLevel>
     </ClCompile>
     <Link>
@@ -76,7 +76,7 @@
     <ProjectReference>
     </ProjectReference>
     <PostBuildEvent>
-      <Command>IF EXIST "$(SolutionDir)\LearnOpenGL\src\shaders"\ (xcopy /Q /E /Y /I "$(SolutionDir)\LearnOpenGL\src\shaders" "..\bin\Debug-windows-x86_64\LearnOpenGL\shaders\" &gt; nul) ELSE (xcopy /Q /Y /I "$(SolutionDir)\LearnOpenGL\src\shaders" "..\bin\Debug-windows-x86_64\LearnOpenGL\shaders\" &gt; nul)</Command>
+      <Command>IF EXIST "$(SolutionDir)\$(ProjectName)\src\shaders"\ (xcopy /Q /E /Y /I "$(SolutionDir)\$(ProjectName)\src\shaders" "..\bin\Debug-windows-x86_64\LearnOpenGL\shaders\" &gt; nul) ELSE (xcopy /Q /Y /I "$(SolutionDir)\$(ProjectName)\src\shaders" "..\bin\Debug-windows-x86_64\LearnOpenGL\shaders\" &gt; nul)</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -106,7 +106,7 @@
     <ProjectReference>
     </ProjectReference>
     <PostBuildEvent>
-      <Command>IF EXIST "$(SolutionDir)\LearnOpenGL\src\shaders"\ (xcopy /Q /E /Y /I "$(SolutionDir)\LearnOpenGL\src\shaders" "..\bin\Release-windows-x86_64\LearnOpenGL\shaders\" &gt; nul) ELSE (xcopy /Q /Y /I "$(SolutionDir)\LearnOpenGL\src\shaders" "..\bin\Release-windows-x86_64\LearnOpenGL\shaders\" &gt; nul)</Command>
+      <Command>IF EXIST "$(SolutionDir)\$(ProjectName)\src\shaders"\ (xcopy /Q /E /Y /I "$(SolutionDir)\$(ProjectName)\src\shaders" "..\bin\Release-windows-x86_64\LearnOpenGL\shaders\" &gt; nul) ELSE (xcopy /Q /Y /I "$(SolutionDir)\$(ProjectName)\src\shaders" "..\bin\Release-windows-x86_64\LearnOpenGL\shaders\" &gt; nul)</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>

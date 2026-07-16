@@ -20,8 +20,8 @@ typedef struct {
 }Color;
 
 //window specs
-const int WIDTH = 600;
-const int HEIGHT = 600;
+const int WIDTH = 800;
+const int HEIGHT = 800;
 
 //colors
 const Color BG_BLUE{ 0.2f, 0.3f, 0.5f, 1.0f };
@@ -200,76 +200,6 @@ int main() {
 	return 0;
 }
 
-void OnFrameBufferResize(GLFWwindow* window, int width, int height) {
-	glViewport(0, 0, width, height);
-}
-
-void OnWindowClose(GLFWwindow* window) {
-	std::cout << "Closing window..." << std::endl;
-}
-
-void onCursorMove(GLFWwindow* window, double xpos, double ypos) {
-
-	if (firstMouse) {
-		mouseLastX = xpos;
-		mouseLastY = ypos;
-		firstMouse = false;
-	}
-
-	double xoffset = (xpos - mouseLastX);
-	double yoffset = (mouseLastY - ypos); //flip y
-	mouseLastX = xpos;
-	mouseLastY = ypos;
-
-	camera.processMouseMovement((float)xoffset, (float)yoffset);
-}
-
-void onMouseScroll(GLFWwindow* window, double xoffset, double yoffset) {
-	camera.processMouseScroll((float)yoffset);
-}
-
-
-void setGLFWEventCallbacks(GLFWwindow* window) {
-	glfwSetFramebufferSizeCallback(window, OnFrameBufferResize);
-	glfwSetWindowCloseCallback(window, OnWindowClose);
-	glfwSetCursorPosCallback(window, onCursorMove);
-	glfwSetScrollCallback(window, onMouseScroll);
-}
-
-void processInput(GLFWwindow* window, float deltaTime) {
-	if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
-		glfwSetWindowShouldClose(window, 1);
-	}
-
-	//there's probably a better way to do this
-	if (glfwGetKey(window, GLFW_KEY_SLASH) == GLFW_PRESS) {
-		texInterp += 0.01f;
-		if (texInterp >= 1.0) {
-			texInterp = 1.0f;
-		}
-	}
-	if (glfwGetKey(window, GLFW_KEY_PERIOD) == GLFW_PRESS) {
-		texInterp -= 0.01f;
-		if (texInterp <= 0.0) {
-			texInterp = 0.0f;
-		}
-	}
-
-	//camera movement
-	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
-		camera.processKeyInput(FORWARD, deltaTime);
-	if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
-		camera.processKeyInput(BACKWARD, deltaTime);
-	if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
-		camera.processKeyInput(LEFT, deltaTime);
-	if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
-		camera.processKeyInput(RIGHT, deltaTime);
-	if (glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS)
-		camera.processKeyInput(ASCEND, deltaTime);
-	if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS)
-		camera.processKeyInput(DESCEND, deltaTime);
-}
-
 GLFWwindow* Init() {
 	//init glfw
 	if (!glfwInit()) {
@@ -329,4 +259,74 @@ GLFWwindow* Init() {
 	stbi_set_flip_vertically_on_load(true);
 
 	return window;
+}
+
+void processInput(GLFWwindow* window, float deltaTime) {
+	if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
+		glfwSetWindowShouldClose(window, 1);
+	}
+
+	//there's probably a better way to do this
+	if (glfwGetKey(window, GLFW_KEY_SLASH) == GLFW_PRESS) {
+		texInterp += 0.01f;
+		if (texInterp >= 1.0) {
+			texInterp = 1.0f;
+		}
+	}
+	if (glfwGetKey(window, GLFW_KEY_PERIOD) == GLFW_PRESS) {
+		texInterp -= 0.01f;
+		if (texInterp <= 0.0) {
+			texInterp = 0.0f;
+		}
+	}
+
+	//camera movement
+	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
+		camera.processKeyInput(FORWARD, deltaTime);
+	if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
+		camera.processKeyInput(BACKWARD, deltaTime);
+	if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
+		camera.processKeyInput(LEFT, deltaTime);
+	if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
+		camera.processKeyInput(RIGHT, deltaTime);
+	if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS)
+		camera.processKeyInput(ASCEND, deltaTime);
+	if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS)
+		camera.processKeyInput(DESCEND, deltaTime);
+}
+
+void OnFrameBufferResize(GLFWwindow* window, int width, int height) {
+	glViewport(0, 0, width, height);
+}
+
+void OnWindowClose(GLFWwindow* window) {
+	std::cout << "Closing window..." << std::endl;
+}
+
+void onCursorMove(GLFWwindow* window, double xpos, double ypos) {
+
+	if (firstMouse) {
+		mouseLastX = xpos;
+		mouseLastY = ypos;
+		firstMouse = false;
+	}
+
+	double xoffset = (xpos - mouseLastX);
+	double yoffset = (mouseLastY - ypos); //flip y
+	mouseLastX = xpos;
+	mouseLastY = ypos;
+
+	camera.processMouseMovement((float)xoffset, (float)yoffset);
+}
+
+void onMouseScroll(GLFWwindow* window, double xoffset, double yoffset) {
+	camera.processMouseScroll((float)yoffset);
+}
+
+
+void setGLFWEventCallbacks(GLFWwindow* window) {
+	glfwSetFramebufferSizeCallback(window, OnFrameBufferResize);
+	glfwSetWindowCloseCallback(window, OnWindowClose);
+	glfwSetCursorPosCallback(window, onCursorMove);
+	glfwSetScrollCallback(window, onMouseScroll);
 }

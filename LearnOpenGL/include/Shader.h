@@ -95,18 +95,18 @@ void Shader::use() const{
 void Shader::_createShader(const char* sourcePath, GLenum shaderType, unsigned int* shader) {
 	*shader = glCreateShader(shaderType);
 	
-	std::string fragShaderSource = _readFile(sourcePath);
-	const char* fsrc = fragShaderSource.c_str();
-	glShaderSource(*shader, 1, &fsrc, nullptr);
+	std::string shaderSource = _readFile(sourcePath);
+	const char* src = shaderSource.c_str();
+	glShaderSource(*shader, 1, &src, nullptr);
 
 	glCompileShader(*shader);
 
-	int fCompileStatus;
-	char fInfoLog[MAX_INFO_SIZE];
-	glGetShaderiv(*shader, GL_COMPILE_STATUS, &fCompileStatus);
-	if (fCompileStatus == GL_FALSE) {
-		glGetShaderInfoLog(*shader, MAX_INFO_SIZE, NULL, fInfoLog);
-		std::cout << "shader compilation error: " << fInfoLog << std::endl;
+	int compileStatus;
+	char infoLog[MAX_INFO_SIZE];
+	glGetShaderiv(*shader, GL_COMPILE_STATUS, &compileStatus);
+	if (compileStatus == GL_FALSE) {
+		glGetShaderInfoLog(*shader, MAX_INFO_SIZE, NULL, infoLog);
+		std::cout << "shader compilation error: " << infoLog << std::endl;
 		exit(EXIT_FAILURE);
 	}
 }
