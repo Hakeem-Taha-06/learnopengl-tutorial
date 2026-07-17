@@ -1,5 +1,5 @@
 <div align="center">
-<img width="400" height="400" alt="LearnOpenGL_3-ezgif com-optimize" src="https://github.com/user-attachments/assets/61082ad1-4778-4d1f-92a4-b9ec7f55de75" />
+<img width="400" height="400" alt="LearnOpenGL_4-ezgif com-optimize" src="https://github.com/user-attachments/assets/a3c85037-7b7d-4599-9f18-07df77de2c1c" />
 </div>
 
 # LearnOpenGL
