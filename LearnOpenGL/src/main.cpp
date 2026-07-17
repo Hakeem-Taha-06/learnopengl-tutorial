@@ -7,6 +7,9 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
+#define GLM_ENABLE_EXPERIMENTAL
+#include <glm/gtx/string_cast.hpp> //glm::to_string
+
 #include <iostream>
 #include <cmath>
 
@@ -79,40 +82,40 @@ int main() {
 	std::vector<float> cubeVertices{
 		//positions         //color             //normals           //texture coordinates
 		//back
-		-0.5f,-0.5f,-0.5f,  1.0f, 0.5f, 0.31f,  0.0f, 0.0f,-1.0f,  0.0f, 0.0f,
-		 0.5f,-0.5f,-0.5f,  1.0f, 0.5f, 0.31f,  0.0f, 0.0f,-1.0f,  1.0f, 0.0f,
-		 0.5f, 0.5f,-0.5f,  1.0f, 0.5f, 0.31f,  0.0f, 0.0f,-1.0f,  1.0f, 1.0f,
-		-0.5f, 0.5f,-0.5f,  1.0f, 0.5f, 0.31f,  0.0f, 0.0f,-1.0f,  0.0f, 1.0f,
+		 0.5f,-0.5f,-0.5f,  1.0f, 0.0f,  0.0f,  0.0f, 0.0f,-1.0f,  0.0f, 0.0f,
+		-0.5f,-0.5f,-0.5f,  0.0f, 1.0f,  0.0f,  0.0f, 0.0f,-1.0f,  1.0f, 0.0f,
+		-0.5f, 0.5f,-0.5f,  0.0f, 0.0f,  1.0f,  0.0f, 0.0f,-1.0f,  1.0f, 1.0f,
+		 0.5f, 0.5f,-0.5f,  1.0f, 1.0f,  0.0f,  0.0f, 0.0f,-1.0f,  0.0f, 1.0f,
 
 		//front
-		-0.5f,-0.5f, 0.5f,  1.0f, 0.5f, 0.31f,  0.0f, 0.0f, 1.0f,  0.0f, 0.0f,
-		 0.5f,-0.5f, 0.5f,  1.0f, 0.5f, 0.31f,  0.0f, 0.0f, 1.0f,  1.0f, 0.0f,
-		 0.5f, 0.5f, 0.5f,  1.0f, 0.5f, 0.31f,  0.0f, 0.0f, 1.0f,  1.0f, 1.0f,
-		-0.5f, 0.5f, 0.5f,  1.0f, 0.5f, 0.31f,  0.0f, 0.0f, 1.0f,  0.0f, 1.0f,
+		-0.5f,-0.5f, 0.5f,  1.0f, 0.0f,  0.0f,  0.0f, 0.0f, 1.0f,  0.0f, 0.0f,
+		 0.5f,-0.5f, 0.5f,  0.0f, 1.0f,  0.0f,  0.0f, 0.0f, 1.0f,  1.0f, 0.0f,
+		 0.5f, 0.5f, 0.5f,  0.0f, 0.0f,  1.0f,  0.0f, 0.0f, 1.0f,  1.0f, 1.0f,
+		-0.5f, 0.5f, 0.5f,  1.0f, 1.0f,  0.0f,  0.0f, 0.0f, 1.0f,  0.0f, 1.0f,
 
 		//left
-		-0.5f, 0.5f, 0.5f,  1.0f, 0.5f, 0.31f, -1.0f, 0.0f, 0.0f,  1.0f, 0.0f,
-		-0.5f, 0.5f,-0.5f,  1.0f, 0.5f, 0.31f, -1.0f, 0.0f, 0.0f,  1.0f, 1.0f,
-		-0.5f,-0.5f,-0.5f,  1.0f, 0.5f, 0.31f, -1.0f, 0.0f, 0.0f,  0.0f, 1.0f,
-		-0.5f,-0.5f, 0.5f,  1.0f, 0.5f, 0.31f, -1.0f, 0.0f, 0.0f,  0.0f, 0.0f,
+		-0.5f,-0.5f,-0.5f,  1.0f, 0.0f,  0.0f, -1.0f, 0.0f, 0.0f,  0.0f, 0.0f,
+		-0.5f,-0.5f, 0.5f,  0.0f, 1.0f,  0.0f, -1.0f, 0.0f, 0.0f,  1.0f, 0.0f,
+		-0.5f, 0.5f, 0.5f,  0.0f, 0.0f,  1.0f, -1.0f, 0.0f, 0.0f,  1.0f, 1.0f,
+		-0.5f, 0.5f,-0.5f,  1.0f, 1.0f,  0.0f, -1.0f, 0.0f, 0.0f,  0.0f, 1.0f,
 
 		//right
-		 0.5f, 0.5f, 0.5f,  1.0f, 0.5f, 0.31f,  1.0f, 0.0f, 0.0f,  1.0f, 0.0f,
-		 0.5f, 0.5f,-0.5f,  1.0f, 0.5f, 0.31f,  1.0f, 0.0f, 0.0f,  1.0f, 1.0f,
-		 0.5f,-0.5f,-0.5f,  1.0f, 0.5f, 0.31f,  1.0f, 0.0f, 0.0f,  0.0f, 1.0f,
-		 0.5f,-0.5f, 0.5f,  1.0f, 0.5f, 0.31f,  1.0f, 0.0f, 0.0f,  0.0f, 0.0f,
+		 0.5f,-0.5f, 0.5f,  1.0f, 0.0f,  0.0f,  1.0f, 0.0f, 0.0f,  0.0f, 0.0f,
+		 0.5f,-0.5f,-0.5f,  0.0f, 1.0f,  0.0f,  1.0f, 0.0f, 0.0f,  1.0f, 0.0f,
+		 0.5f, 0.5f,-0.5f,  0.0f, 0.0f,  1.0f,  1.0f, 0.0f, 0.0f,  1.0f, 1.0f,
+		 0.5f, 0.5f, 0.5f,  1.0f, 1.0f,  0.0f,  1.0f, 0.0f, 0.0f,  0.0f, 1.0f,
 
 		//bottom
-		-0.5f,-0.5f,-0.5f,  1.0f, 0.5f, 0.31f,  0.0f,-1.0f, 0.0f,  0.0f, 1.0f,
-		 0.5f,-0.5f,-0.5f,  1.0f, 0.5f, 0.31f,  0.0f,-1.0f, 0.0f,  1.0f, 1.0f,
-		 0.5f,-0.5f, 0.5f,  1.0f, 0.5f, 0.31f,  0.0f,-1.0f, 0.0f,  1.0f, 0.0f,
-		-0.5f,-0.5f, 0.5f,  1.0f, 0.5f, 0.31f,  0.0f,-1.0f, 0.0f,  0.0f, 0.0f,
+		 0.5f,-0.5f, 0.5f,  1.0f, 0.0f,  0.0f,  0.0f,-1.0f, 0.0f,  0.0f, 0.0f,
+		-0.5f,-0.5f, 0.5f,  0.0f, 1.0f,  0.0f,  0.0f,-1.0f, 0.0f,  1.0f, 0.0f,
+		-0.5f,-0.5f,-0.5f,  0.0f, 0.0f,  1.0f,  0.0f,-1.0f, 0.0f,  1.0f, 1.0f,
+		 0.5f,-0.5f,-0.5f,  1.0f, 1.0f,  0.0f,  0.0f,-1.0f, 0.0f,  0.0f, 1.0f,
 
 		//top
-		-0.5f, 0.5f,-0.5f,  1.0f, 0.5f, 0.31f,  0.0f, 1.0f, 0.0f,  0.0f, 1.0f,
-		 0.5f, 0.5f,-0.5f,  1.0f, 0.5f, 0.31f,  0.0f, 1.0f, 0.0f,  1.0f, 1.0f,
-		 0.5f, 0.5f, 0.5f,  1.0f, 0.5f, 0.31f,  0.0f, 1.0f, 0.0f,  1.0f, 0.0f,
-		-0.5f, 0.5f, 0.5f,  1.0f, 0.5f, 0.31f,  0.0f, 1.0f, 0.0f,  0.0f, 0.0f,
+		-0.5f, 0.5f, 0.5f,  1.0f, 0.0f,  0.0f,  0.0f, 1.0f, 0.0f,  0.0f, 0.0f,
+		 0.5f, 0.5f, 0.5f,  0.0f, 1.0f,  0.0f,  0.0f, 1.0f, 0.0f,  1.0f, 0.0f,
+		 0.5f, 0.5f,-0.5f,  0.0f, 0.0f,  1.0f,  0.0f, 1.0f, 0.0f,  1.0f, 1.0f,
+		-0.5f, 0.5f,-0.5f,  1.0f, 1.0f,  0.0f,  0.0f, 1.0f, 0.0f,  0.0f, 1.0f,
 	};
 
 	std::vector<unsigned int> cubeIndices = {
@@ -181,6 +184,26 @@ int main() {
 					 BG_BLUE.a);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+		lightShader.use();
+		glm::mat4 lightModel = glm::mat4(1.0f);
+		lightModel = glm::rotate(lightModel, (float)glfwGetTime(), glm::vec3(0.0f, 1.0f, 0.0f));
+		lightModel = glm::translate(lightModel, lightPos);
+		glm::vec3 transformedLightPos = glm::vec3(lightModel * glm::vec4(lightPos, 0.0f));
+
+		lightModel = glm::scale(lightModel, glm::vec3(0.2f));
+		lightShader.setUniformMat4("model", glm::value_ptr(lightModel));
+
+		std::cout << glm::to_string(transformedLightPos) << std::endl;
+		
+		glm::mat4 lightView = glm::mat4(1.0f);
+		lightView = camera.getViewMatrix();
+		lightShader.setUniformMat4("view", glm::value_ptr(lightView));
+
+		glm::mat4 lightProjection = glm::perspective(glm::radians(camera.Zoom), (float)WIDTH / (float)HEIGHT, 0.1f, 100.0f);
+		lightShader.setUniformMat4("projection", glm::value_ptr(lightProjection));
+
+		light.draw(GL_TRIANGLES);
+
 		cubeShader.use();
 		//coordinate transformation pipeline (MVP pipeline)
 		//model matrix: local -> world
@@ -203,26 +226,13 @@ int main() {
 		cubeShader.setUniformf("lightColor", 1.0f, 1.0f, 1.0f);
 		cubeShader.setUniformf("ambientStrength", 0.2f);
 		cubeShader.setUniformf("specularStrength", 0.5f);
-		cubeShader.setUniformVec3("lightPos", lightPos);
+		cubeShader.setUniformVec3("lightPos", transformedLightPos);
 		cubeShader.setUniformVec3("cameraPos", camera.Position);
 		cubeShader.setUniformf("shine", 32);
 
 		cube.draw(GL_TRIANGLES);
 
-		lightShader.use();
-		model = glm::mat4(1.0f);
-		model = glm::translate(model, lightPos);
-		model = glm::scale(model, glm::vec3(0.2f));
-		lightShader.setUniformMat4("model", glm::value_ptr(model));
-
-		view = glm::mat4(1.0f);
-		view = camera.getViewMatrix();
-		lightShader.setUniformMat4("view", glm::value_ptr(view));
-
-		projection = glm::perspective(glm::radians(camera.Zoom), (float)WIDTH / (float)HEIGHT, 0.1f, 100.0f);
-		lightShader.setUniformMat4("projection", glm::value_ptr(projection));
-
-		light.draw(GL_TRIANGLES);
+		
 
 		/*GLenum err;
 		while ((err = glGetError()) != GL_NO_ERROR) {
