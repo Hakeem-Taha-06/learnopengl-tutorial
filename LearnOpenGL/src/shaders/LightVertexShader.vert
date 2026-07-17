@@ -1,8 +1,6 @@
 #version 330 core
 layout (location = 0) in vec3 aPos;
-layout (location = 1) in vec3 aColor;   //unused
-layout (location = 2) in vec3 anormal;  //unused
-layout (location = 3) in vec2 aTexCoord;//unused
+layout (location = 1) in vec3 aNormal;
 
 //MVP matrices
 uniform mat4 model;

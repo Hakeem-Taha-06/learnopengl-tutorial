@@ -26,17 +26,40 @@
 #include "Texture.h"
 #include "Camera.h"
 
-typedef struct {
-	float r, g, b, a;
-}Color;
+//TODO: material class
+struct Material {
+	glm::vec3 ambient;
+	glm::vec3 diffuse;
+	glm::vec3 specular;
+	int shine;
+};
+
+//TODO: light class
+struct Light {
+	glm::vec3 position;
+	glm::vec3 ambient;
+	glm::vec3 diffuse;
+	glm::vec3 specular;
+};
 
 //window specs
 const int WIDTH = 800;
 const int HEIGHT = 800;
 
 //colors
-const Color BG_BLUE{ 0.2f, 0.3f, 0.5f, 1.0f };
-const Color BORDER{ 0.2f, 0.2f, 0.2f, 1.0f };
+const glm::vec4 BG_BLUE{ 0.2f, 0.3f, 0.5f, 1.0f};
+const glm::vec4 BORDER{ 0.2f, 0.2f, 0.2f, 1.0f};
+
+glm::vec4 BGColor = BG_BLUE;
+glm::vec3 cubeColor{ 1.0f, 0.5f, 0.15f};
+
+//materials
+Material cubeMaterial{
+	{0.5f, 0.5f, 0.5f},
+	{0.5f, 0.5f, 0.5f},
+	{0.5f, 0.5f, 0.5f},
+	32
+};
 
 //shader source paths
 #ifdef DEBUG
@@ -60,6 +83,7 @@ void glfwErrorCallback(int error_code, const char* description);
 GLFWwindow* Init();
 void setGLFWEventCallbacks(GLFWwindow* window);
 void processInput(GLFWwindow* window, float deltaTime);
+void enterDebug();
 
 float texInterp = 0.0f;
 float FOV = 45.0f;
@@ -68,7 +92,14 @@ float FOV = 45.0f;
 Camera camera{glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 1.0f, 0.0f) ,-30.0f, -135.0f, 3.0f};
 
 //light
-glm::vec3 lightPos{ 0.5f, 0.8f, -0.5f };
+Light light{
+	{1.0f, 1.0f, 1.0f},
+	{0.2f, 0.2f, 0.2f},
+	{0.5f, 0.5f, 0.5f},
+	{1.0f, 1.0f, 1.0f}
+};
+float lightOrbitRadius = 1.0f;
+float lightOrbitSpeed = 1.0f;
 
 //cursor properties
 double mouseLastX = WIDTH / 2, mouseLastY = HEIGHT / 2;
@@ -78,9 +109,22 @@ bool firstMouse = true;
 float deltaTime = 0.0f;
 float lastFrame = 0.0f;
 
+bool mouseEnabled = true;
+bool shouldExit = false;
+
 int main() {
 	
 	GLFWwindow* window = Init();
+
+	// Setup Dear ImGui context
+	IMGUI_CHECKVERSION();
+	ImGui::CreateContext();
+	ImGuiIO& io = ImGui::GetIO();
+	io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
+	io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Control
+	// Setup Platform/Renderer backends
+	ImGui_ImplGlfw_InitForOpenGL(window, true);          // Second param install_callback=true will install GLFW callbacks and chain to existing ones.
+	ImGui_ImplOpenGL3_Init("#version 330");
 
 	//create the shader program that uses the vertex and fragment shaders in the shaders folder
 	Shader cubeShader((SHADER_SOURCE_PATH + "TextureVertexShader.vert").c_str(),
@@ -89,42 +133,42 @@ int main() {
 		               (SHADER_SOURCE_PATH + "LightFragmentShader.frag").c_str());
 
 	std::vector<float> cubeVertices{
-		//positions         //color             //normals           //texture coordinates
+		//positions         //normals
 		//back
-		 0.5f,-0.5f,-0.5f,  1.0f, 0.0f,  0.0f,  0.0f, 0.0f,-1.0f,  0.0f, 0.0f,
-		-0.5f,-0.5f,-0.5f,  0.0f, 1.0f,  0.0f,  0.0f, 0.0f,-1.0f,  1.0f, 0.0f,
-		-0.5f, 0.5f,-0.5f,  0.0f, 0.0f,  1.0f,  0.0f, 0.0f,-1.0f,  1.0f, 1.0f,
-		 0.5f, 0.5f,-0.5f,  1.0f, 1.0f,  0.0f,  0.0f, 0.0f,-1.0f,  0.0f, 1.0f,
+		 0.5f,-0.5f,-0.5f,  0.0f, 0.0f,-1.0f,
+		-0.5f,-0.5f,-0.5f,  0.0f, 0.0f,-1.0f,
+		-0.5f, 0.5f,-0.5f,  0.0f, 0.0f,-1.0f,
+		 0.5f, 0.5f,-0.5f,  0.0f, 0.0f,-1.0f,
 
 		//front
-		-0.5f,-0.5f, 0.5f,  1.0f, 0.0f,  0.0f,  0.0f, 0.0f, 1.0f,  0.0f, 0.0f,
-		 0.5f,-0.5f, 0.5f,  0.0f, 1.0f,  0.0f,  0.0f, 0.0f, 1.0f,  1.0f, 0.0f,
-		 0.5f, 0.5f, 0.5f,  0.0f, 0.0f,  1.0f,  0.0f, 0.0f, 1.0f,  1.0f, 1.0f,
-		-0.5f, 0.5f, 0.5f,  1.0f, 1.0f,  0.0f,  0.0f, 0.0f, 1.0f,  0.0f, 1.0f,
+		-0.5f,-0.5f, 0.5f,  0.0f, 0.0f, 1.0f,
+		 0.5f,-0.5f, 0.5f,  0.0f, 0.0f, 1.0f,
+		 0.5f, 0.5f, 0.5f,  0.0f, 0.0f, 1.0f,
+		-0.5f, 0.5f, 0.5f,  0.0f, 0.0f, 1.0f,
 
 		//left
-		-0.5f,-0.5f,-0.5f,  1.0f, 0.0f,  0.0f, -1.0f, 0.0f, 0.0f,  0.0f, 0.0f,
-		-0.5f,-0.5f, 0.5f,  0.0f, 1.0f,  0.0f, -1.0f, 0.0f, 0.0f,  1.0f, 0.0f,
-		-0.5f, 0.5f, 0.5f,  0.0f, 0.0f,  1.0f, -1.0f, 0.0f, 0.0f,  1.0f, 1.0f,
-		-0.5f, 0.5f,-0.5f,  1.0f, 1.0f,  0.0f, -1.0f, 0.0f, 0.0f,  0.0f, 1.0f,
+		-0.5f,-0.5f,-0.5f, -1.0f, 0.0f, 0.0f,
+		-0.5f,-0.5f, 0.5f, -1.0f, 0.0f, 0.0f,
+		-0.5f, 0.5f, 0.5f, -1.0f, 0.0f, 0.0f,
+		-0.5f, 0.5f,-0.5f, -1.0f, 0.0f, 0.0f,
 
 		//right
-		 0.5f,-0.5f, 0.5f,  1.0f, 0.0f,  0.0f,  1.0f, 0.0f, 0.0f,  0.0f, 0.0f,
-		 0.5f,-0.5f,-0.5f,  0.0f, 1.0f,  0.0f,  1.0f, 0.0f, 0.0f,  1.0f, 0.0f,
-		 0.5f, 0.5f,-0.5f,  0.0f, 0.0f,  1.0f,  1.0f, 0.0f, 0.0f,  1.0f, 1.0f,
-		 0.5f, 0.5f, 0.5f,  1.0f, 1.0f,  0.0f,  1.0f, 0.0f, 0.0f,  0.0f, 1.0f,
+		 0.5f,-0.5f, 0.5f,  1.0f, 0.0f, 0.0f,
+		 0.5f,-0.5f,-0.5f,  1.0f, 0.0f, 0.0f,
+		 0.5f, 0.5f,-0.5f,  1.0f, 0.0f, 0.0f,
+		 0.5f, 0.5f, 0.5f,  1.0f, 0.0f, 0.0f,
 
 		//bottom
-		 0.5f,-0.5f, 0.5f,  1.0f, 0.0f,  0.0f,  0.0f,-1.0f, 0.0f,  0.0f, 0.0f,
-		-0.5f,-0.5f, 0.5f,  0.0f, 1.0f,  0.0f,  0.0f,-1.0f, 0.0f,  1.0f, 0.0f,
-		-0.5f,-0.5f,-0.5f,  0.0f, 0.0f,  1.0f,  0.0f,-1.0f, 0.0f,  1.0f, 1.0f,
-		 0.5f,-0.5f,-0.5f,  1.0f, 1.0f,  0.0f,  0.0f,-1.0f, 0.0f,  0.0f, 1.0f,
+		 0.5f,-0.5f, 0.5f,  0.0f,-1.0f, 0.0f,
+		-0.5f,-0.5f, 0.5f,  0.0f,-1.0f, 0.0f,
+		-0.5f,-0.5f,-0.5f,  0.0f,-1.0f, 0.0f,
+		 0.5f,-0.5f,-0.5f,  0.0f,-1.0f, 0.0f,
 
 		//top
-		-0.5f, 0.5f, 0.5f,  1.0f, 0.0f,  0.0f,  0.0f, 1.0f, 0.0f,  0.0f, 0.0f,
-		 0.5f, 0.5f, 0.5f,  0.0f, 1.0f,  0.0f,  0.0f, 1.0f, 0.0f,  1.0f, 0.0f,
-		 0.5f, 0.5f,-0.5f,  0.0f, 0.0f,  1.0f,  0.0f, 1.0f, 0.0f,  1.0f, 1.0f,
-		-0.5f, 0.5f,-0.5f,  1.0f, 1.0f,  0.0f,  0.0f, 1.0f, 0.0f,  0.0f, 1.0f,
+		-0.5f, 0.5f, 0.5f,  0.0f, 1.0f, 0.0f,
+		 0.5f, 0.5f, 0.5f,  0.0f, 1.0f, 0.0f,
+		 0.5f, 0.5f,-0.5f,  0.0f, 1.0f, 0.0f,
+		-0.5f, 0.5f,-0.5f,  0.0f, 1.0f, 0.0f,
 	};
 
 	std::vector<unsigned int> cubeIndices = {
@@ -157,21 +201,21 @@ int main() {
 
 	//------------------ cube data ------------------
 	Shape cube(cubeVertices, cubeIndices);
-	cube.create(PosColNormTex3d, GL_STATIC_DRAW);
+	cube.create(PosNorm3d, GL_STATIC_DRAW);
 
-	Shape light(cubeVertices, cubeIndices);
+	Shape lightBox(cubeVertices, cubeIndices);
 	//reuse the cube's buffers since they are already sent to the gpu
-	light.setVBO(cube.getVBO());
-	light.setEBO(cube.getEBO());
-	light.create(PosColNormTex3d, GL_STATIC_DRAW);
+	lightBox.setVBO(cube.getVBO());
+	lightBox.setEBO(cube.getEBO());
+	lightBox.create(PosNorm3d, GL_STATIC_DRAW);
 
 	//texture stuff
 	Texture texture1((ASSETS_PATH + "textures/cool_cat.png").c_str());
 	Texture texture2((ASSETS_PATH + "textures/urara_ballin.png").c_str());
 
-	cubeShader.use();
+	/*cubeShader.use();
 	cubeShader.setUniformi("texture1", 0);
-	cubeShader.setUniformi("texture2", 1);
+	cubeShader.setUniformi("texture2", 1);*/
 
 	//for wireframe
 	//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
@@ -184,6 +228,11 @@ int main() {
 		deltaTime = currentFrame - lastFrame;
 		lastFrame = currentFrame;
 
+		if (mouseEnabled) 
+			glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+		else
+			glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+
 		// Start the Dear ImGui frame
 		ImGui_ImplOpenGL3_NewFrame();
 		ImGui_ImplGlfw_NewFrame();
@@ -194,18 +243,19 @@ int main() {
 		processInput(window, deltaTime);
 
 		//rendering
-		glClearColor(BG_BLUE.r, 
-					 BG_BLUE.g, 
-					 BG_BLUE.b, 
-					 BG_BLUE.a);
+		glClearColor(BGColor.r, 
+					 BGColor.g, 
+					 BGColor.b, 
+					 BGColor.a);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-		lightPos.x = (float)std::cos(glfwGetTime())*2/3;
-		lightPos.z = (float)std::sin(glfwGetTime())*2/3;
+		//------------- LIGHT
+		light.position.x = (float)std::cos(glfwGetTime() * lightOrbitSpeed) * lightOrbitRadius;
+		light.position.z = (float)std::sin(glfwGetTime() * lightOrbitSpeed) * lightOrbitRadius;
 
 		lightShader.use();
 		glm::mat4 lightModel = glm::mat4(1.0f);
-		lightModel = glm::translate(lightModel, lightPos);
+		lightModel = glm::translate(lightModel, light.position);
 		lightModel = glm::scale(lightModel, glm::vec3(0.2f));
 		lightShader.setUniformMat4("model", glm::value_ptr(lightModel));
 		
@@ -216,8 +266,9 @@ int main() {
 		glm::mat4 lightProjection = glm::perspective(glm::radians(camera.Zoom), (float)WIDTH / (float)HEIGHT, 0.1f, 100.0f);
 		lightShader.setUniformMat4("projection", glm::value_ptr(lightProjection));
 
-		light.draw(GL_TRIANGLES);
+		lightBox.draw(GL_TRIANGLES);
 
+		//------------ CUBE
 		cubeShader.use();
 		//coordinate transformation pipeline (MVP pipeline)
 		//model matrix: local -> world
@@ -233,19 +284,47 @@ int main() {
 		//projection matrix: view -> clip
 		glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), (float)WIDTH / (float)HEIGHT, 0.1f, 100.0f);
 		cubeShader.setUniformMat4("projection", glm::value_ptr(projection));
-
-		texture1.setUnit(0);
-		texture2.setUnit(1);
 		
-		cubeShader.setUniformf("lightColor", 1.0f, 1.0f, 1.0f);
-		cubeShader.setUniformf("ambientStrength", 0.2f);
-		cubeShader.setUniformf("specularStrength", 0.5f);
-		cubeShader.setUniformVec3("lightPos", lightPos);
+		//light properties
+		cubeShader.setUniformVec3("light.position", light.position);
+		cubeShader.setUniformVec3("light.ambient", light.ambient);
+		cubeShader.setUniformVec3("light.diffuse", light.diffuse);
+		cubeShader.setUniformVec3("light.specular", light.specular);
+
+		//material
+		cubeShader.setUniformVec3("material.ambient", cubeMaterial.ambient);
+		cubeShader.setUniformVec3("material.diffuse", cubeMaterial.diffuse);
+		cubeShader.setUniformVec3("material.specular", cubeMaterial.specular);
+		cubeShader.setUniformi("material.shine", cubeMaterial.shine);
+		cubeShader.setUniformVec3("color", cubeColor);
+		
+		cubeShader.setUniformVec3("light.position", light.position);
 		cubeShader.setUniformVec3("cameraPos", camera.Position);
-		cubeShader.setUniformf("shine", 32);
 
 		cube.draw(GL_TRIANGLES);
 
+		//imgui
+		ImGui::Begin("Debug window");
+		ImGui::Checkbox("Enable cursor", &mouseEnabled);
+		if (ImGui::Button("Close Window"))
+			glfwSetWindowShouldClose(window, 1);
+		ImGui::ColorEdit4("Background Color", glm::value_ptr(BGColor));
+		//light
+		ImGui::Text("Light Properties");
+		ImGui::SliderFloat3("Light Position", glm::value_ptr(light.position), -2.0f, 2.0f);
+		ImGui::ColorEdit4("Light Ambient Color", glm::value_ptr(light.ambient));
+		ImGui::ColorEdit4("Light Diffuse Color", glm::value_ptr(light.diffuse));
+		ImGui::ColorEdit4("Light Specular Color", glm::value_ptr(light.specular));
+		ImGui::SliderFloat("Light Orbit Radius", &lightOrbitRadius, 0.5f, 3.0f);
+		ImGui::SliderFloat("Light Orbit Speed", &lightOrbitSpeed, 0.0f, 5.0f);
+		//cube
+		ImGui::Text("Cube Properties");
+		ImGui::ColorEdit4("Cube Color", glm::value_ptr(cubeColor));
+		ImGui::ColorEdit4("Cube Ambient Color", glm::value_ptr(cubeMaterial.ambient));
+		ImGui::ColorEdit4("Cube Diffuse Color", glm::value_ptr(cubeMaterial.diffuse));
+		ImGui::ColorEdit4("Cube Specular Color", glm::value_ptr(cubeMaterial.specular));
+		ImGui::SliderInt("Cube Shine", &cubeMaterial.shine, 0, 256);
+		ImGui::End();
 		ImGui::Render();
 		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
@@ -326,23 +405,13 @@ GLFWwindow* Init() {
 	//opengl expects y = 0 to be the bottom line, while images have it at the top
 	stbi_set_flip_vertically_on_load(true);
 
-	// Setup Dear ImGui context
-	IMGUI_CHECKVERSION();
-	ImGui::CreateContext();
-	ImGuiIO& io = ImGui::GetIO();
-	io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
-	io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Control
-
-	// Setup Platform/Renderer backends
-	ImGui_ImplGlfw_InitForOpenGL(window, true);          // Second param install_callback=true will install GLFW callbacks and chain to existing ones.
-	ImGui_ImplOpenGL3_Init();
-
 	return window;
 }
 
 void processInput(GLFWwindow* window, float deltaTime) {
 	if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
-		glfwSetWindowShouldClose(window, 1);
+		//glfwSetWindowShouldClose(window, 1);
+		enterDebug();
 	}
 
 	//there's probably a better way to do this
@@ -380,6 +449,7 @@ void OnFrameBufferResize(GLFWwindow* window, int width, int height) {
 
 void OnWindowClose(GLFWwindow* window) {
 	std::cout << "Closing window..." << std::endl;
+	glfwSetWindowShouldClose(window, 1);
 }
 
 void onCursorMove(GLFWwindow* window, double xpos, double ypos) {
@@ -395,17 +465,22 @@ void onCursorMove(GLFWwindow* window, double xpos, double ypos) {
 	mouseLastX = xpos;
 	mouseLastY = ypos;
 
-	camera.processMouseMovement((float)xoffset, (float)yoffset);
+	if(!mouseEnabled)
+		camera.processMouseMovement((float)xoffset, (float)yoffset);
 }
 
 void onMouseScroll(GLFWwindow* window, double xoffset, double yoffset) {
-	camera.processMouseScroll((float)yoffset);
+	if (!mouseEnabled)
+		camera.processMouseScroll((float)yoffset);
 }
 
 void glfwErrorCallback(int error_code, const char* description) {
 	std::cerr << "GLFW ERROR " << error_code << ": " << description << std::endl;
 }
 
+void enterDebug() {
+	mouseEnabled = true;
+}
 
 void setGLFWEventCallbacks(GLFWwindow* window) {
 	glfwSetFramebufferSizeCallback(window, OnFrameBufferResize);
