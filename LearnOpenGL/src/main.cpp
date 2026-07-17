@@ -1,14 +1,22 @@
+//------------- GLFW + openGL3 ------------- 
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
+//------------- stb -------------
 #include <stb/stb_image.h>
 
+//------------- glm -------------
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtx/string_cast.hpp> //glm::to_string
+
+//------------- imgui -------------
+#include <imgui/imgui.h>
+#include <imgui/imgui_impl_glfw.h>
+#include <imgui/imgui_impl_opengl3.h>
 
 #include <iostream>
 #include <cmath>
@@ -46,6 +54,7 @@ void OnFrameBufferResize(GLFWwindow* window, int width, int height);
 void OnWindowClose(GLFWwindow* window);
 void onCursorMove(GLFWwindow* window, double xpos, double ypos);
 void onMouseScroll(GLFWwindow* window, double xoffset, double yoffset);
+void glfwErrorCallback(int error_code, const char* description);
 
 //core
 GLFWwindow* Init();
@@ -169,10 +178,17 @@ int main() {
 
 	//----------------------- main loop -----------------------
 	while (!glfwWindowShouldClose(window)) {
+		glfwPollEvents();
 
 		float currentFrame = (float)glfwGetTime();
 		deltaTime = currentFrame - lastFrame;
 		lastFrame = currentFrame;
+
+		// Start the Dear ImGui frame
+		ImGui_ImplOpenGL3_NewFrame();
+		ImGui_ImplGlfw_NewFrame();
+		ImGui::NewFrame();
+		//ImGui::ShowDemoWindow(); // Show demo window! :)
 
 		//input
 		processInput(window, deltaTime);
@@ -184,16 +200,14 @@ int main() {
 					 BG_BLUE.a);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+		lightPos.x = (float)std::cos(glfwGetTime())*2/3;
+		lightPos.z = (float)std::sin(glfwGetTime())*2/3;
+
 		lightShader.use();
 		glm::mat4 lightModel = glm::mat4(1.0f);
-		lightModel = glm::rotate(lightModel, (float)glfwGetTime(), glm::vec3(0.0f, 1.0f, 0.0f));
 		lightModel = glm::translate(lightModel, lightPos);
-		glm::vec3 transformedLightPos = glm::vec3(lightModel * glm::vec4(lightPos, 0.0f));
-
 		lightModel = glm::scale(lightModel, glm::vec3(0.2f));
 		lightShader.setUniformMat4("model", glm::value_ptr(lightModel));
-
-		std::cout << glm::to_string(transformedLightPos) << std::endl;
 		
 		glm::mat4 lightView = glm::mat4(1.0f);
 		lightView = camera.getViewMatrix();
@@ -226,13 +240,14 @@ int main() {
 		cubeShader.setUniformf("lightColor", 1.0f, 1.0f, 1.0f);
 		cubeShader.setUniformf("ambientStrength", 0.2f);
 		cubeShader.setUniformf("specularStrength", 0.5f);
-		cubeShader.setUniformVec3("lightPos", transformedLightPos);
+		cubeShader.setUniformVec3("lightPos", lightPos);
 		cubeShader.setUniformVec3("cameraPos", camera.Position);
 		cubeShader.setUniformf("shine", 32);
 
 		cube.draw(GL_TRIANGLES);
 
-		
+		ImGui::Render();
+		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
 		/*GLenum err;
 		while ((err = glGetError()) != GL_NO_ERROR) {
@@ -241,8 +256,12 @@ int main() {
 
 		//check and poll events and swap frame buffers
 		glfwSwapBuffers(window);
-		glfwPollEvents();
 	}
+
+	//imgui shutdown
+	ImGui_ImplOpenGL3_Shutdown();
+	ImGui_ImplGlfw_Shutdown();
+	ImGui::DestroyContext();
 
 	//frees all allocated memory by GLFW
 	glfwTerminate();
@@ -277,7 +296,7 @@ GLFWwindow* Init() {
 	//Vsync on
 	glfwSwapInterval(1);
 
-	//hides the cursor and sets it to the middle of the window
+	//hides the cursor and sets it to the middle of the window, should be toggleable if i want to use imgui
 	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
 	//init GLAD by giving it the platform specific function that loads openGL's function pointers
@@ -306,6 +325,17 @@ GLFWwindow* Init() {
 
 	//opengl expects y = 0 to be the bottom line, while images have it at the top
 	stbi_set_flip_vertically_on_load(true);
+
+	// Setup Dear ImGui context
+	IMGUI_CHECKVERSION();
+	ImGui::CreateContext();
+	ImGuiIO& io = ImGui::GetIO();
+	io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
+	io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Control
+
+	// Setup Platform/Renderer backends
+	ImGui_ImplGlfw_InitForOpenGL(window, true);          // Second param install_callback=true will install GLFW callbacks and chain to existing ones.
+	ImGui_ImplOpenGL3_Init();
 
 	return window;
 }
@@ -372,10 +402,15 @@ void onMouseScroll(GLFWwindow* window, double xoffset, double yoffset) {
 	camera.processMouseScroll((float)yoffset);
 }
 
+void glfwErrorCallback(int error_code, const char* description) {
+	std::cerr << "GLFW ERROR " << error_code << ": " << description << std::endl;
+}
+
 
 void setGLFWEventCallbacks(GLFWwindow* window) {
 	glfwSetFramebufferSizeCallback(window, OnFrameBufferResize);
 	glfwSetWindowCloseCallback(window, OnWindowClose);
 	glfwSetCursorPosCallback(window, onCursorMove);
 	glfwSetScrollCallback(window, onMouseScroll);
+	glfwSetErrorCallback(glfwErrorCallback);
 }

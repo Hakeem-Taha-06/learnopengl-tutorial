@@ -19,12 +19,15 @@ project "LearnOpenGL"
     {
         "%{prj.name}/src/**.cpp",
         "%{prj.name}/src/**.c",
-        "%{prj.name}/include/**.h"
+        "%{prj.name}/include/**.h",
+        "%{wks.location}/%{prj.name}/dependencies/src/**.c",
+        "%{wks.location}/%{prj.name}/dependencies/src/**.cpp"
     }
 
     includedirs
     {
         "%{wks.location}/%{prj.name}/dependencies/include",
+        "%{wks.location}/%{prj.name}/dependencies/include/imgui", --for imgui, i don't want to edit their include paths
         "%{prj.name}/src",
         "%{prj.name}/include"
     }

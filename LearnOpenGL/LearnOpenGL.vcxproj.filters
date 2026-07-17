@@ -1,6 +1,12 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
+    <Filter Include="dependencies">
+      <UniqueIdentifier>{8CAD9F58-7810-2FFD-2196-67B30DD8FA7F}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="dependencies\src">
+      <UniqueIdentifier>{A351AFD4-8F4A-CE26-B87C-B3ABA4D4AD32}</UniqueIdentifier>
+    </Filter>
     <Filter Include="include">
       <UniqueIdentifier>{89AF369E-F58E-B539-FEA6-40106A051C9B}</UniqueIdentifier>
     </Filter>
@@ -23,13 +29,34 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="src\glad.c">
-      <Filter>src</Filter>
+    <ClCompile Include="dependencies\src\glad.c">
+      <Filter>dependencies\src</Filter>
+    </ClCompile>
+    <ClCompile Include="dependencies\src\imgui.cpp">
+      <Filter>dependencies\src</Filter>
+    </ClCompile>
+    <ClCompile Include="dependencies\src\imgui_demo.cpp">
+      <Filter>dependencies\src</Filter>
+    </ClCompile>
+    <ClCompile Include="dependencies\src\imgui_draw.cpp">
+      <Filter>dependencies\src</Filter>
+    </ClCompile>
+    <ClCompile Include="dependencies\src\imgui_impl_glfw.cpp">
+      <Filter>dependencies\src</Filter>
+    </ClCompile>
+    <ClCompile Include="dependencies\src\imgui_impl_opengl3.cpp">
+      <Filter>dependencies\src</Filter>
+    </ClCompile>
+    <ClCompile Include="dependencies\src\imgui_tables.cpp">
+      <Filter>dependencies\src</Filter>
+    </ClCompile>
+    <ClCompile Include="dependencies\src\imgui_widgets.cpp">
+      <Filter>dependencies\src</Filter>
+    </ClCompile>
+    <ClCompile Include="dependencies\src\stb_image.cpp">
+      <Filter>dependencies\src</Filter>
     </ClCompile>
     <ClCompile Include="src\main.cpp">
-      <Filter>src</Filter>
-    </ClCompile>
-    <ClCompile Include="src\stb_image.cpp">
       <Filter>src</Filter>
     </ClCompile>
   </ItemGroup>

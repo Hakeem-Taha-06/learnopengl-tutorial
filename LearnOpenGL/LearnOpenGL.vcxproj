@@ -59,7 +59,7 @@
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <PreprocessorDefinitions>DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>dependencies\include;src;include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>dependencies\include;dependencies\include\imgui;src;include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
       <Optimization>Disabled</Optimization>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
@@ -84,7 +84,7 @@
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <PreprocessorDefinitions>RELEASE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>dependencies\include;src;include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>dependencies\include;dependencies\include\imgui;src;include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <DebugInformationFormat>None</DebugInformationFormat>
       <Optimization>Full</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
@@ -116,9 +116,16 @@
     <ClInclude Include="include\Texture.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="src\glad.c" />
+    <ClCompile Include="dependencies\src\glad.c" />
+    <ClCompile Include="dependencies\src\imgui.cpp" />
+    <ClCompile Include="dependencies\src\imgui_demo.cpp" />
+    <ClCompile Include="dependencies\src\imgui_draw.cpp" />
+    <ClCompile Include="dependencies\src\imgui_impl_glfw.cpp" />
+    <ClCompile Include="dependencies\src\imgui_impl_opengl3.cpp" />
+    <ClCompile Include="dependencies\src\imgui_tables.cpp" />
+    <ClCompile Include="dependencies\src\imgui_widgets.cpp" />
+    <ClCompile Include="dependencies\src\stb_image.cpp" />
     <ClCompile Include="src\main.cpp" />
-    <ClCompile Include="src\stb_image.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
