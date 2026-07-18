@@ -19,7 +19,8 @@
 #include <imgui/imgui_impl_opengl3.h>
 
 #include <iostream>
-#include <cmath>
+#define _USE_MATH_DEFINES
+#include <math.h>
 
 #include "Shader.h"
 #include "Shape.h"
@@ -111,6 +112,57 @@ float lastFrame = 0.0f;
 
 bool mouseEnabled = true;
 bool shouldExit = false;
+
+//sphere stuff
+void createSphere(int sectorCount, int stackCount, float radius, glm::vec3 origin, std::vector<float>& vertices, std::vector<unsigned int>& indices) {
+	float sectorStep = 2 * (float)M_PI / (float)sectorCount;
+	float stackStep = -(float)M_PI / (float)stackCount;
+
+	float sectorAngle = 0.0;
+	float stackAngle =  -(float)M_PI_2;
+	for (int i = 0; i <= stackCount; ++i) {
+		
+		for (int j = 0; j <= sectorCount; ++j) {
+			float x = cos(stackAngle) * sin(sectorAngle);
+			float y = sin(stackAngle);
+			float z = cos(stackAngle) * cos(sectorAngle);
+			
+			vertices.push_back(x + origin.x);
+			vertices.push_back(y + origin.y);
+			vertices.push_back(z + origin.z);
+
+			//normals
+			glm::vec3 normal = glm::normalize(glm::vec3(x,y,z) - origin);
+			vertices.push_back(normal.x);
+			vertices.push_back(normal.y);
+			vertices.push_back(normal.z);
+
+			sectorAngle += sectorStep;
+		}
+		stackAngle += stackStep;
+	}
+
+	//i need to understand this part more
+	for (int i = 0; i < stackCount; ++i) {
+		int k1 = i * (sectorCount + 1);
+		int k2 = k1 + sectorCount + 1;
+		for (int j = 0; j < sectorCount; ++j, ++k1, ++k2) {
+			//exclude first sector 
+			if (i != 0) {
+				indices.push_back(k1);
+				indices.push_back(k2);
+				indices.push_back(k1 + 1);
+			}
+
+			//exclude last sector
+			if (i != sectorCount - 1) {
+				indices.push_back(k1 + 1);
+				indices.push_back(k2);
+				indices.push_back(k2 + 1);
+			}
+		}
+	}
+}
 
 int main() {
 	
@@ -217,6 +269,11 @@ int main() {
 	cubeShader.setUniformi("texture1", 0);
 	cubeShader.setUniformi("texture2", 1);*/
 
+	std::vector<float> sphereVertices;
+	std::vector<unsigned int> sphereIndices;
+	createSphere(20, 20, 1.0f, glm::vec3(0.0f, 0.0f, 0.0f), sphereVertices, sphereIndices);
+	Shape sphere(sphereVertices, sphereIndices);
+	sphere.create(PosNorm3d, GL_STATIC_DRAW);
 	//for wireframe
 	//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
@@ -304,7 +361,8 @@ int main() {
 		cubeShader.setUniformVec3("light.position", light.position);
 		cubeShader.setUniformVec3("cameraPos", camera.Position);
 
-		cube.draw(GL_TRIANGLES);
+		//cube.draw(GL_TRIANGLES);
+		sphere.draw(GL_TRIANGLES);
 
 		//imgui
 		ImGui::Begin("Debug window");
