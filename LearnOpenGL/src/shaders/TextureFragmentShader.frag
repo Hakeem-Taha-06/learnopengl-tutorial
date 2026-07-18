@@ -3,7 +3,7 @@ out vec4 fragColor;
 
 in vec3 normal;
 in vec3 fragPos;
-uniform vec3 color;
+uniform vec3 color;//unused
 
 //light stuff
 uniform vec3 cameraPos;
@@ -48,5 +48,5 @@ void main(){
 
 	vec3 finalLightColor = (specular + diffuse + ambient);
 
-	fragColor = vec4(finalLightColor*color, 1.0);
+	fragColor = vec4(finalLightColor, 1.0);
 }

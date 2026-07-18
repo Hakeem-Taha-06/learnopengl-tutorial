@@ -266,6 +266,9 @@ int main() {
 		glm::mat4 lightProjection = glm::perspective(glm::radians(camera.Zoom), (float)WIDTH / (float)HEIGHT, 0.1f, 100.0f);
 		lightShader.setUniformMat4("projection", glm::value_ptr(lightProjection));
 
+		//normalizing doesn't really make sense here but it looks better for visualization so ill keep it
+		lightShader.setUniformVec3("color", glm::normalize(light.ambient+light.diffuse+light.specular));
+
 		lightBox.draw(GL_TRIANGLES);
 
 		//------------ CUBE
