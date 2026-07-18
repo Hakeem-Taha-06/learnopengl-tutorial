@@ -3,7 +3,6 @@ out vec4 fragColor;
 
 in vec3 normal;
 in vec3 fragPos;
-in vec2 texCoord;
 uniform vec3 color;//unused
 
 //light stuff
@@ -27,8 +26,6 @@ struct Material{
 uniform Light light;
 uniform Material material;
 
-uniform sampler2D lightMap;
-
 void main(){
 	vec3 ambient = material.ambient * light.ambient;
 
@@ -49,5 +46,5 @@ void main(){
 
 	vec3 finalLightColor = (specular + diffuse + ambient);
 
-	fragColor = vec4(finalLightColor, 1.0)*texture(lightMap, texCoord);
+	fragColor = vec4(finalLightColor, 1.0);
 }

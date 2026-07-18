@@ -10,6 +10,7 @@ enum VertexDataShape
 	PosColTex3d,    //3d position + rgb value + 2 texture coordinates
 	PosColNormTex3d,//3d position + rgb value + normal vector + 2 texture coordinates 
 	PosNorm3d,
+	PosNormTex3d,
 };
 
 class Shape {
@@ -133,6 +134,15 @@ void Shape::create(VertexDataShape shape, GLenum usage) {
 		glEnableVertexAttribArray(0);
 		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
 		glEnableVertexAttribArray(1);
+		break;
+	case PosNormTex3d:
+		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
+		glEnableVertexAttribArray(0);
+		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
+		glEnableVertexAttribArray(1);
+		glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
+		glEnableVertexAttribArray(2);
+		break;
 	}
 
 	std::cout << "VAO: " << m_VAO << " VBO: " << m_VBO << " EBO: " << m_EBO << std::endl;

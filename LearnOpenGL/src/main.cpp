@@ -116,26 +116,32 @@ bool shouldExit = false;
 //sphere stuff
 void createSphere(int sectorCount, int stackCount, float radius, glm::vec3 origin, std::vector<float>& vertices, std::vector<unsigned int>& indices) {
 	float sectorStep = 2 * (float)M_PI / (float)sectorCount;
-	float stackStep = -(float)M_PI / (float)stackCount;
+	float stackStep = (float)M_PI / (float)stackCount;
 
 	float sectorAngle = 0.0;
 	float stackAngle =  -(float)M_PI_2;
 	for (int i = 0; i <= stackCount; ++i) {
-		
+		sectorAngle = 0.0f;
 		for (int j = 0; j <= sectorCount; ++j) {
-			float x = cos(stackAngle) * sin(sectorAngle);
-			float y = sin(stackAngle);
-			float z = cos(stackAngle) * cos(sectorAngle);
+			float x = cos(stackAngle) * sin(sectorAngle) * radius + origin.x;
+			float y = sin(stackAngle)                    * radius + origin.y;
+			float z = cos(stackAngle) * cos(sectorAngle) * radius + origin.z;
 			
-			vertices.push_back(x + origin.x);
-			vertices.push_back(y + origin.y);
-			vertices.push_back(z + origin.z);
+			vertices.push_back(x);
+			vertices.push_back(y);
+			vertices.push_back(z);
 
 			//normals
 			glm::vec3 normal = glm::normalize(glm::vec3(x,y,z) - origin);
 			vertices.push_back(normal.x);
 			vertices.push_back(normal.y);
 			vertices.push_back(normal.z);
+
+			//texture
+			float tx = (float)j / sectorCount;
+			float ty = (float)i / stackCount;
+			vertices.push_back(tx);
+			vertices.push_back(ty);
 
 			sectorAngle += sectorStep;
 		}
@@ -179,11 +185,19 @@ int main() {
 	ImGui_ImplOpenGL3_Init("#version 330");
 
 	//create the shader program that uses the vertex and fragment shaders in the shaders folder
-	Shader cubeShader((SHADER_SOURCE_PATH + "TextureVertexShader.vert").c_str(),
-				      (SHADER_SOURCE_PATH + "TextureFragmentShader.frag").c_str());
+	Shader cubeShader((SHADER_SOURCE_PATH + "NormalVertexShader.vert").c_str(),
+				      (SHADER_SOURCE_PATH + "NormalFragmentShader.frag").c_str());
 	Shader lightShader((SHADER_SOURCE_PATH + "LightVertexShader.vert").c_str(),
 		               (SHADER_SOURCE_PATH + "LightFragmentShader.frag").c_str());
+	Shader sphereShader((SHADER_SOURCE_PATH + "TextureVertexShader.vert").c_str(),
+					    (SHADER_SOURCE_PATH + "TextureFragmentShader.frag").c_str());
 
+	//texture stuff
+	Texture texture1((ASSETS_PATH + "textures/cool_cat.png").c_str());
+	Texture texture2((ASSETS_PATH + "textures/urara_ballin.png").c_str());
+	Texture globeTexture((ASSETS_PATH + "textures/globe.png").c_str());
+	Texture perlin((ASSETS_PATH + "textures/perlin_noise.png").c_str());
+	
 	std::vector<float> cubeVertices{
 		//positions         //normals
 		//back
@@ -261,10 +275,6 @@ int main() {
 	lightBox.setEBO(cube.getEBO());
 	lightBox.create(PosNorm3d, GL_STATIC_DRAW);
 
-	//texture stuff
-	Texture texture1((ASSETS_PATH + "textures/cool_cat.png").c_str());
-	Texture texture2((ASSETS_PATH + "textures/urara_ballin.png").c_str());
-
 	/*cubeShader.use();
 	cubeShader.setUniformi("texture1", 0);
 	cubeShader.setUniformi("texture2", 1);*/
@@ -273,7 +283,7 @@ int main() {
 	std::vector<unsigned int> sphereIndices;
 	createSphere(20, 20, 1.0f, glm::vec3(0.0f, 0.0f, 0.0f), sphereVertices, sphereIndices);
 	Shape sphere(sphereVertices, sphereIndices);
-	sphere.create(PosNorm3d, GL_STATIC_DRAW);
+	sphere.create(PosNormTex3d, GL_STATIC_DRAW);
 	//for wireframe
 	//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
@@ -332,18 +342,18 @@ int main() {
 		cubeShader.use();
 		//coordinate transformation pipeline (MVP pipeline)
 		//model matrix: local -> world
-		glm::mat4 model(1.0f);
-		model = glm::translate(model, glm::vec3(0.0f, 0.0f, 0.0f));
-		cubeShader.setUniformMat4("model", glm::value_ptr(model));
+		glm::mat4 cubeModel(1.0f);
+		cubeModel = glm::translate(cubeModel, glm::vec3(0.0f, 0.0f, 0.0f));
+		cubeShader.setUniformMat4("model", glm::value_ptr(cubeModel));
 
 		//view matrix: world -> view
-		glm::mat4 view(1.0f);
-		view = camera.getViewMatrix();
-		cubeShader.setUniformMat4("view", glm::value_ptr(view));
+		glm::mat4 cubeView(1.0f);
+		cubeView = camera.getViewMatrix();
+		cubeShader.setUniformMat4("view", glm::value_ptr(cubeView));
 
 		//projection matrix: view -> clip
-		glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), (float)WIDTH / (float)HEIGHT, 0.1f, 100.0f);
-		cubeShader.setUniformMat4("projection", glm::value_ptr(projection));
+		glm::mat4 cubeProjection = glm::perspective(glm::radians(camera.Zoom), (float)WIDTH / (float)HEIGHT, 0.1f, 100.0f);
+		cubeShader.setUniformMat4("projection", glm::value_ptr(cubeProjection));
 		
 		//light properties
 		cubeShader.setUniformVec3("light.position", light.position);
@@ -356,12 +366,45 @@ int main() {
 		cubeShader.setUniformVec3("material.diffuse", cubeMaterial.diffuse);
 		cubeShader.setUniformVec3("material.specular", cubeMaterial.specular);
 		cubeShader.setUniformi("material.shine", cubeMaterial.shine);
-		cubeShader.setUniformVec3("color", cubeColor);
 		
-		cubeShader.setUniformVec3("light.position", light.position);
 		cubeShader.setUniformVec3("cameraPos", camera.Position);
 
 		//cube.draw(GL_TRIANGLES);
+
+		//------------ SPHERE
+		sphereShader.use();
+		glm::mat4 sphereModel(1.0f);
+		sphereModel = glm::translate(sphereModel, glm::vec3(0.0f, 0.0f, 0.0f));
+		sphereShader.setUniformMat4("model", glm::value_ptr(sphereModel));
+
+		//view matrix: world -> view
+		glm::mat4 sphereView(1.0f);
+		sphereView = camera.getViewMatrix();
+		sphereShader.setUniformMat4("view", glm::value_ptr(sphereView));
+
+		//projection matrix: view -> clip
+		glm::mat4 sphereProjection = glm::perspective(glm::radians(camera.Zoom), (float)WIDTH / (float)HEIGHT, 0.1f, 100.0f);
+		sphereShader.setUniformMat4("projection", glm::value_ptr(sphereProjection));
+
+		//light properties
+		sphereShader.setUniformVec3("light.position", light.position);
+		sphereShader.setUniformVec3("light.ambient", light.ambient);
+		sphereShader.setUniformVec3("light.diffuse", light.diffuse);
+		sphereShader.setUniformVec3("light.specular", light.specular);
+
+		//material
+		//for now ill reuse the cube material
+		sphereShader.setUniformVec3("material.ambient", cubeMaterial.ambient);
+		sphereShader.setUniformVec3("material.diffuse", cubeMaterial.diffuse);
+		sphereShader.setUniformVec3("material.specular", cubeMaterial.specular);
+		sphereShader.setUniformi("material.shine", cubeMaterial.shine);
+
+		sphereShader.setUniformVec3("cameraPos", camera.Position);
+
+		//texture
+		sphereShader.setUniformi("lightMap", 0);
+		perlin.setUnit(0);
+
 		sphere.draw(GL_TRIANGLES);
 
 		//imgui
@@ -380,7 +423,6 @@ int main() {
 		ImGui::SliderFloat("Light Orbit Speed", &lightOrbitSpeed, 0.0f, 5.0f);
 		//cube
 		ImGui::Text("Cube Properties");
-		ImGui::ColorEdit4("Cube Color", glm::value_ptr(cubeColor));
 		ImGui::ColorEdit4("Cube Ambient Color", glm::value_ptr(cubeMaterial.ambient));
 		ImGui::ColorEdit4("Cube Diffuse Color", glm::value_ptr(cubeMaterial.diffuse));
 		ImGui::ColorEdit4("Cube Specular Color", glm::value_ptr(cubeMaterial.specular));
