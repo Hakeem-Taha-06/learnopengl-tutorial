@@ -282,8 +282,14 @@ int main() {
 	lightBox.setEBO(sphere.getEBO());
 	lightBox.create(PosNormTex3d, GL_STATIC_DRAW);
 
+	std::vector<float> modelCubeVertices;
+	std::vector<unsigned int> modelCubeIndices;
+
 	ModelLoader ml;
-	ml.loadOBJ((ASSETS_PATH + "models/cube.obj").c_str());
+	ml.loadOBJ((ASSETS_PATH + "models/cone.obj").c_str(), modelCubeVertices, modelCubeIndices);
+
+	Shape modelCube(modelCubeVertices, modelCubeIndices);
+	modelCube.create(PosNormTex3d, GL_STATIC_DRAW);
 
 	//for wireframe
 	//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
@@ -406,7 +412,9 @@ int main() {
 		sphereShader.setUniformi("lightMap", 0);
 		globeTexture.setUnit(0);
 
-		sphere.draw(GL_TRIANGLES);
+		modelCube.draw(GL_TRIANGLES);
+
+		//sphere.draw(GL_TRIANGLES);
 
 		//imgui
 		ImGui::Begin("Debug window");
