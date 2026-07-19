@@ -26,6 +26,7 @@
 #include "Shape.h"
 #include "Texture.h"
 #include "Camera.h"
+#include "ModelLoader.h"
 
 //TODO: material class
 struct Material {
@@ -265,25 +266,25 @@ int main() {
 
 	//---------------------------------------------------------------------------------
 
-	//------------------ cube data ------------------
+	//------------------ shape data ------------------
 	Shape cube(cubeVertices, cubeIndices);
 	cube.create(PosNorm3d, GL_STATIC_DRAW);
-
-	Shape lightBox(cubeVertices, cubeIndices);
-	//reuse the cube's buffers since they are already sent to the gpu
-	lightBox.setVBO(cube.getVBO());
-	lightBox.setEBO(cube.getEBO());
-	lightBox.create(PosNorm3d, GL_STATIC_DRAW);
-
-	/*cubeShader.use();
-	cubeShader.setUniformi("texture1", 0);
-	cubeShader.setUniformi("texture2", 1);*/
 
 	std::vector<float> sphereVertices;
 	std::vector<unsigned int> sphereIndices;
 	createSphere(20, 20, 1.0f, glm::vec3(0.0f, 0.0f, 0.0f), sphereVertices, sphereIndices);
 	Shape sphere(sphereVertices, sphereIndices);
 	sphere.create(PosNormTex3d, GL_STATIC_DRAW);
+
+	Shape lightBox(sphereVertices, sphereIndices);
+	//reuse the cube's buffers since they are already sent to the gpu
+	lightBox.setVBO(sphere.getVBO());
+	lightBox.setEBO(sphere.getEBO());
+	lightBox.create(PosNormTex3d, GL_STATIC_DRAW);
+
+	ModelLoader ml;
+	ml.loadOBJ((ASSETS_PATH + "models/cube.obj").c_str());
+
 	//for wireframe
 	//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
@@ -403,7 +404,7 @@ int main() {
 
 		//texture
 		sphereShader.setUniformi("lightMap", 0);
-		perlin.setUnit(0);
+		globeTexture.setUnit(0);
 
 		sphere.draw(GL_TRIANGLES);
 

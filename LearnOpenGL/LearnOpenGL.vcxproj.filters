@@ -27,6 +27,7 @@
     <ClInclude Include="include\Texture.h">
       <Filter>include</Filter>
     </ClInclude>
+    <ClInclude Include="include\ModelLoader.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="dependencies\src\glad.c">
