@@ -65,6 +65,10 @@ struct SpotLight { //mix, position + direction
 	glm::vec3 specular;
 
 	float cutoff;
+	float outerCutoff;
+	float constant = 1.0f;
+	float linear = 0.7f;
+	float quadratic = 1.8f;
 };
 
 //window specs
@@ -116,7 +120,8 @@ SpotLight sLight{
 	{0.2f, 0.2f, 0.2f},
 	{0.5f, 0.5f, 0.5f},
 	{1.0f, 1.0f, 1.0f},
-	15.0f
+	12.5f, 15.0f,
+	1.0f, 0.045f, 0.0075f
 };
 
 glm::vec3 emmisionColor{0.0f, 0.2f, 0.0f};
@@ -414,6 +419,10 @@ int main() {
 		cubeShader.setUniformVec3("sLight.diffuse", sLight.diffuse);
 		cubeShader.setUniformVec3("sLight.specular", sLight.specular);
 		cubeShader.setUniformf("sLight.cutoff", std::cos(glm::radians(sLight.cutoff)));
+		cubeShader.setUniformf("sLight.outerCutoff", std::cos(glm::radians(sLight.outerCutoff)));
+		cubeShader.setUniformf("sLight.constant", sLight.constant);
+		cubeShader.setUniformf("sLight.linear", sLight.linear);
+		cubeShader.setUniformf("sLight.quadratic", sLight.quadratic);
 
 		//material
 		cubeShader.setUniformi("material.shine", cubeMaterial.shine);
@@ -447,6 +456,9 @@ int main() {
 		ImGui::SliderFloat3("Point Light Attenuation Coefficients", &pLight.constant, 0.0f, 1.0f); //relies on structs being contiguous in memory
 		ImGui::SliderFloat("Point Light Orbit Radius", &lightOrbitRadius, 0.5f, 3.0f);
 		ImGui::SliderFloat("Point Light Orbit Speed", &lightOrbitSpeed, 0.0f, 5.0f);
+
+		ImGui::SliderFloat("Spotlight Inner Cutoff", &sLight.cutoff, 10.0f, 20.0f);
+		ImGui::SliderFloat("Spotlight Outer Cutoff", &sLight.outerCutoff, 10.0f, 20.0f);
 
 		ImGui::SliderFloat3("Directional Light Direction", glm::value_ptr(dLight.direction), -10.0f, 10.0f);
 		ImGui::ColorEdit3("Direction Light Ambient Color", glm::value_ptr(dLight.ambient));

@@ -35,6 +35,10 @@ struct SpotLight {
 	vec3 specular;
 
 	float cutoff;
+	float outerCutoff;
+	float constant;
+	float linear;
+	float quadratic;
 };
 
 struct Material{
@@ -103,30 +107,41 @@ vec3 calculateDirectionalLight(DirLight l){
 }
 
 vec3 calculateSpotLight(SpotLight l){
-	vec3 ambient = vec3(0.0);
-	vec3 diffuse = vec3(0.0);;
-	vec3 specular = vec3(0.0);;
-
 	vec3 norm = normalize(normal);
 	vec3 lightDir = normalize(l.position - fragPos);
 
 	//the cosine of the angle of the light ray relative to the light facing direction
 	float theta = dot(lightDir, normalize(-l.direction));
-	if(theta > l.cutoff){
-		ambient = vec3(texture(material.diffuse, texCoord)) * l.ambient;
 
-		//a dot product between the light direction and the normal of the surface
-		float diff = max(dot(norm, lightDir),0.0);
-		diffuse = diff*l.diffuse*vec3(texture(material.diffuse, texCoord));
+	vec3 ambient = vec3(texture(material.diffuse, texCoord)) * l.ambient;
 
-		//need to review the math on this part
-		vec3 viewDir = normalize(cameraPos - fragPos);
-		vec3 reflectDir = reflect(-lightDir, norm);
+	//a dot product between the light direction and the normal of the surface
+	float diff = max(dot(norm, lightDir),0.0);
+	vec3 diffuse = diff*l.diffuse*vec3(texture(material.diffuse, texCoord));
 
-		//a dot product between the reflected light direction around the normal and the vector of the view direction
-		float spec = pow(max(dot(viewDir, reflectDir), 0.0), material.shine);
-		specular = texture(material.specular, texCoord).rgb * spec * l.specular;
-	}
+	//need to review the math on this part
+	vec3 viewDir = normalize(cameraPos - fragPos);
+	vec3 reflectDir = reflect(-lightDir, norm);
+
+	//a dot product between the reflected light direction around the normal and the vector of the view direction
+	float spec = pow(max(dot(viewDir, reflectDir), 0.0), material.shine);
+	vec3 specular = texture(material.specular, texCoord).rgb * spec * l.specular;
+
+	if(l.outerCutoff > l.cutoff) l.outerCutoff = l.cutoff;
+	//light edge smoothing
+	float epsilon = l.cutoff - l.outerCutoff;
+	float intensity = clamp((theta - l.outerCutoff)/epsilon, 0.0, 1.0);
+
+	diffuse*=intensity;
+	specular*=intensity;
+
+	//attenuation
+	float d = length(l.position - fragPos);
+	float attenuation = 1.0/(l.constant + l.linear*d + l.quadratic*d*d);
+	
+	ambient*=attenuation;
+	diffuse*=attenuation;
+	specular*=attenuation;
 
 	return (ambient + diffuse + specular);
 }
