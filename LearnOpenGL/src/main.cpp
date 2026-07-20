@@ -18,6 +18,8 @@
 #include <imgui/imgui_impl_glfw.h>
 #include <imgui/imgui_impl_opengl3.h>
 
+#include "assimp/Importer.hpp"
+
 #include <iostream>
 #define _USE_MATH_DEFINES
 #include <math.h>
@@ -27,7 +29,6 @@
 #include "Texture.h"
 #include "Camera.h"
 #include "ModelLoader.h"
-#include "claude_OBJ.h"
 
 //TODO: material class
 struct Material {
@@ -199,81 +200,25 @@ int main() {
 	Texture texture2((ASSETS_PATH + "textures/urara_ballin.png").c_str());
 	Texture globeTexture((ASSETS_PATH + "textures/globe.png").c_str());
 	Texture perlin((ASSETS_PATH + "textures/perlin_noise.png").c_str());
-	
-	std::vector<float> cubeVertices{
-		//positions         //normals
-		//back
-		 0.5f,-0.5f,-0.5f,  0.0f, 0.0f,-1.0f,
-		-0.5f,-0.5f,-0.5f,  0.0f, 0.0f,-1.0f,
-		-0.5f, 0.5f,-0.5f,  0.0f, 0.0f,-1.0f,
-		 0.5f, 0.5f,-0.5f,  0.0f, 0.0f,-1.0f,
-
-		//front
-		-0.5f,-0.5f, 0.5f,  0.0f, 0.0f, 1.0f,
-		 0.5f,-0.5f, 0.5f,  0.0f, 0.0f, 1.0f,
-		 0.5f, 0.5f, 0.5f,  0.0f, 0.0f, 1.0f,
-		-0.5f, 0.5f, 0.5f,  0.0f, 0.0f, 1.0f,
-
-		//left
-		-0.5f,-0.5f,-0.5f, -1.0f, 0.0f, 0.0f,
-		-0.5f,-0.5f, 0.5f, -1.0f, 0.0f, 0.0f,
-		-0.5f, 0.5f, 0.5f, -1.0f, 0.0f, 0.0f,
-		-0.5f, 0.5f,-0.5f, -1.0f, 0.0f, 0.0f,
-
-		//right
-		 0.5f,-0.5f, 0.5f,  1.0f, 0.0f, 0.0f,
-		 0.5f,-0.5f,-0.5f,  1.0f, 0.0f, 0.0f,
-		 0.5f, 0.5f,-0.5f,  1.0f, 0.0f, 0.0f,
-		 0.5f, 0.5f, 0.5f,  1.0f, 0.0f, 0.0f,
-
-		//bottom
-		 0.5f,-0.5f, 0.5f,  0.0f,-1.0f, 0.0f,
-		-0.5f,-0.5f, 0.5f,  0.0f,-1.0f, 0.0f,
-		-0.5f,-0.5f,-0.5f,  0.0f,-1.0f, 0.0f,
-		 0.5f,-0.5f,-0.5f,  0.0f,-1.0f, 0.0f,
-
-		//top
-		-0.5f, 0.5f, 0.5f,  0.0f, 1.0f, 0.0f,
-		 0.5f, 0.5f, 0.5f,  0.0f, 1.0f, 0.0f,
-		 0.5f, 0.5f,-0.5f,  0.0f, 1.0f, 0.0f,
-		-0.5f, 0.5f,-0.5f,  0.0f, 1.0f, 0.0f,
-	};
-
-	std::vector<unsigned int> cubeIndices = {
-		//back
-		0, 1, 2,
-		2, 3, 0,
-
-		//front
-		4, 5, 6,
-		6, 7, 4,
-
-		//left
-		8, 9, 10,
-		10, 11, 8,
-
-		//right
-		12, 13, 14,
-		14, 15, 12,
-
-		//bottom
-		16, 17, 18,
-		18, 19, 16,
-
-		//top
-		20, 21, 22,
-		22, 23, 20,
-	};
 
 	//---------------------------------------------------------------------------------
 
-	//------------------ shape data ------------------
-	Shape cube(cubeVertices, cubeIndices);
-	cube.create(PosNorm3d, GL_STATIC_DRAW);
+	//------------------ model loading ------------------
 
+	std::vector<float> cubeVertices;
+	std::vector<unsigned int> cubeIndices;
 	std::vector<float> sphereVertices;
 	std::vector<unsigned int> sphereIndices;
+
+	ModelLoader ml;
+	ml.loadOBJ((ASSETS_PATH + "models/cube.obj").c_str(), cubeVertices, cubeIndices);
+
 	createSphere(20, 20, 1.0f, glm::vec3(0.0f, 0.0f, 0.0f), sphereVertices, sphereIndices);
+
+	//------------------ shape data ------------------
+	Shape cube(cubeVertices, cubeIndices);
+	cube.create(PosNormTex3d, GL_STATIC_DRAW);
+
 	Shape sphere(sphereVertices, sphereIndices);
 	sphere.create(PosNormTex3d, GL_STATIC_DRAW);
 
@@ -283,18 +228,6 @@ int main() {
 	lightBox.setEBO(sphere.getEBO());
 	lightBox.create(PosNormTex3d, GL_STATIC_DRAW);
 
-	std::vector<float> modelCubeVertices;
-	std::vector<unsigned int> modelCubeIndices;
-
-	std::vector<float> claudeModelCubeVertices;
-	std::vector<unsigned int> claudeModelCubeIndices;
-
-	ModelLoader ml;
-	ml.loadOBJ((ASSETS_PATH + "models/UV_sphere.obj").c_str(), modelCubeVertices, modelCubeIndices);
-	
-
-	Shape modelCube(modelCubeVertices, modelCubeIndices);
-	modelCube.create(PosNormTex3d, GL_STATIC_DRAW);
 
 	//for wireframe
 	//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
@@ -356,6 +289,7 @@ int main() {
 		//model matrix: local -> world
 		glm::mat4 cubeModel(1.0f);
 		cubeModel = glm::translate(cubeModel, glm::vec3(0.0f, 0.0f, 0.0f));
+		cubeModel = glm::scale(cubeModel, glm::vec3(0.5f));
 		cubeShader.setUniformMat4("model", glm::value_ptr(cubeModel));
 
 		//view matrix: world -> view
@@ -417,9 +351,7 @@ int main() {
 		sphereShader.setUniformi("lightMap", 0);
 		globeTexture.setUnit(0);
 
-		modelCube.draw(GL_TRIANGLES);
-
-		//sphere.draw(GL_TRIANGLES);
+		sphere.draw(GL_TRIANGLES);
 
 		//imgui
 		ImGui::Begin("Debug window");

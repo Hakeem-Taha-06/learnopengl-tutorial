@@ -40,12 +40,14 @@ project "LearnOpenGL"
     links 
     {
         "glfw3",
+        "assimp-vc143-mtd",
         "opengl32.lib"
     }
 
     postbuildcommands
     {
-        ('{COPY} "%{wks.location}/%{prj.name}/src/shaders" "%{cfg.targetdir}/shaders/"') --copies the shaders to be in the same directory as the exe
+        ('{COPY} "%{wks.location}/%{prj.name}/src/shaders" "%{cfg.targetdir}/shaders/"'),--copies the shaders to be in the same directory as the exe   
+        ('{COPY} "%{wks.location}/%{prj.name}/dependencies/libs/assimp-vc143-mtd.dll" "%{cfg.targetdir}"')
     }
 
     cppdialect "C++17"
