@@ -28,6 +28,7 @@
       <Filter>include</Filter>
     </ClInclude>
     <ClInclude Include="include\ModelLoader.h" />
+    <ClInclude Include="include\claude_OBJ.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="dependencies\src\glad.c">

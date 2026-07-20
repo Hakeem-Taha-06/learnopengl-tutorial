@@ -4,7 +4,6 @@
 #include <sstream>
 #include <string>
 #include <vector>
-#include <stdio.h>
 
 class ModelLoader {
 public:
@@ -65,50 +64,23 @@ public:
 			else if (line.substr(0, 2).compare("f ") == 0) {
 				if (!fStartSaved) fStartSaved = true; //stop overwriting the face starting line
 				std::istringstream iss{ line.substr(2) };
-				int num;
-				int i = 0;
-				bool notex = false;
-				Index p{ 0, 0, 0 };
-				while (iss >> num) {
-					p.data[i] = num; 
-					++i;
-					if (iss.peek() == '/') {
-						iss.get();
-						if (iss.peek() == '/') {
-							iss.get();
-							p.data[i] = 0; //skip the texture index, increment the counter
-							++i;         
-						}
+				std::string token; //represents one set of indices for a vertex "v/vt/vn"
+				while (iss >> token) {
+					std::istringstream iss2{ token };
+					std::string index;
+					int i = 0;
+					Index p{ 0, 0, 0 };
+					while (std::getline(iss2, index, '/')) {
+						if (!index.empty())
+							p.data[i] = std::stoi(index);
+						++i;
 					}
-					else { // a set of indices was consumed, reset everything
-						f.push_back(p);
-						i = 0;
-						notex = false;
-						p = { 0,0,0 };
-						continue;
-					}
+					f.push_back(p);
 				}
 			}
 			if (!fStartSaved) fStart = file.tellg();
 			if (!std::getline(file, line)) 
 				break;
-		}
-
-		printf("VERTICES: \n");
-		for (Point p : v) {
-			printf("{%g, %g, %g}\n", p.x, p.y, p.z);
-		}							   			 
-		printf("NORMALS: \n");		   			 
-		for (Point p : n) {			   			 
-			printf("{%g, %g, %g}\n", p.x, p.y, p.z);
-		}							   			 
-		printf("TEXTURE: \n");		   			 
-		for (Point p : t) {			   			 
-			printf("{%g, %g, %g}\n", p.x, p.y, p.z);
-		}
-		printf("FACE: \n");
-		for (Index p : f) {
-			printf("{%i, %i, %i}\n", p.v, p.t, p.n);
 		}
 
 		//just in case :D
@@ -167,25 +139,6 @@ public:
 				}
 				fi += n;
 			}
-		}
-
-
-		printf("VERTICES: (%i points)\n", vertices.size()/8);
-		for (int i = 0; i < vertices.size() / 8; ++i) {
-			printf("{");
-			for (int j = 0; j < 8; ++j) {
-				printf("%g, ", vertices[i*8 + j]);
-			}
-			printf("\b\b}\n");
-		}
-
-		printf("INDICES: (%i triangles)\n", indices.size() / 3);
-		for (int i = 0; i < indices.size() / 3; ++i) {
-			printf("{");
-			for (int j = 0; j < 3; ++j) {
-				printf("%i, ", indices[i * 3 + j]);
-			}
-			printf("\b\b}\n");
 		}
 		
 	}

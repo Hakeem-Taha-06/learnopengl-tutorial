@@ -27,6 +27,7 @@
 #include "Texture.h"
 #include "Camera.h"
 #include "ModelLoader.h"
+#include "claude_OBJ.h"
 
 //TODO: material class
 struct Material {
@@ -285,8 +286,12 @@ int main() {
 	std::vector<float> modelCubeVertices;
 	std::vector<unsigned int> modelCubeIndices;
 
+	std::vector<float> claudeModelCubeVertices;
+	std::vector<unsigned int> claudeModelCubeIndices;
+
 	ModelLoader ml;
-	ml.loadOBJ((ASSETS_PATH + "models/cone.obj").c_str(), modelCubeVertices, modelCubeIndices);
+	ml.loadOBJ((ASSETS_PATH + "models/UV_sphere.obj").c_str(), modelCubeVertices, modelCubeIndices);
+	
 
 	Shape modelCube(modelCubeVertices, modelCubeIndices);
 	modelCube.create(PosNormTex3d, GL_STATIC_DRAW);
