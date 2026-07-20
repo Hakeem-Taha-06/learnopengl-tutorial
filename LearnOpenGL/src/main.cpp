@@ -39,7 +39,7 @@ struct Material {
 };
 
 //TODO: light class
-struct PointLight {
+struct PointLight { //light from a single point, decreases intensity over distance
 	glm::vec3 position;
 	glm::vec3 ambient;
 	glm::vec3 diffuse;
@@ -50,11 +50,21 @@ struct PointLight {
 	float quadratic = 1.8f;
 };
 
-struct DirLight {
+struct DirLight { //constant light in certain direction, position acts like infinity
 	glm::vec3 direction;
 	glm::vec3 ambient;
 	glm::vec3 diffuse;
 	glm::vec3 specular;
+};
+
+struct SpotLight { //mix, position + direction
+	glm::vec3 position;
+	glm::vec3 direction;
+	glm::vec3 ambient;
+	glm::vec3 diffuse;
+	glm::vec3 specular;
+
+	float cutoff;
 };
 
 //window specs
@@ -98,6 +108,15 @@ DirLight dLight{
 	{0.2f, 0.2f, 0.2f},
 	{0.5f, 0.5f, 0.5f},
 	{1.0f, 1.0f, 1.0f}
+};
+
+SpotLight sLight{
+	{5.0f, 2.0f, 5.0f},
+	{0.2f, -1.0f, 0.2f},
+	{0.2f, 0.2f, 0.2f},
+	{0.5f, 0.5f, 0.5f},
+	{1.0f, 1.0f, 1.0f},
+	15.0f
 };
 
 glm::vec3 emmisionColor{0.0f, 0.2f, 0.0f};
@@ -367,6 +386,7 @@ int main() {
 		cubeShader.setUniformMat4("projection", glm::value_ptr(cubeProjection));
 		
 		//light properties
+		//can be wrapped in an apply#Light(#Light) function
 		cubeShader.setUniformVec3("pLight.position", pLight.position);
 		cubeShader.setUniformVec3("pLight.ambient", pLight.ambient);
 		cubeShader.setUniformVec3("pLight.diffuse", pLight.diffuse);
@@ -387,6 +407,13 @@ int main() {
 		cubeShader.setUniformVec3("dLight.ambient", dLight.ambient);
 		cubeShader.setUniformVec3("dLight.diffuse", dLight.diffuse);
 		cubeShader.setUniformVec3("dLight.specular", dLight.specular);
+
+		cubeShader.setUniformVec3("sLight.position", camera.Position);
+		cubeShader.setUniformVec3("sLight.direction", camera.Front);
+		cubeShader.setUniformVec3("sLight.ambient", sLight.ambient);
+		cubeShader.setUniformVec3("sLight.diffuse", sLight.diffuse);
+		cubeShader.setUniformVec3("sLight.specular", sLight.specular);
+		cubeShader.setUniformf("sLight.cutoff", std::cos(glm::radians(sLight.cutoff)));
 
 		//material
 		cubeShader.setUniformi("material.shine", cubeMaterial.shine);

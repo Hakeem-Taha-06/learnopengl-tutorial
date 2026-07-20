@@ -27,6 +27,16 @@ struct DirLight{
 	vec3 specular;
 };
 
+struct SpotLight {
+	vec3 position;
+	vec3 direction;
+	vec3 ambient;
+	vec3 diffuse;
+	vec3 specular;
+
+	float cutoff;
+};
+
 struct Material{
 	sampler2D diffuse;
 	sampler2D specular;
@@ -37,6 +47,7 @@ struct Material{
 uniform PointLight pLight;
 uniform PointLight pLight2;
 uniform DirLight dLight;
+uniform SpotLight sLight;
 uniform Material material;
 uniform float time;
 uniform vec3 emmisionColor;
@@ -60,10 +71,6 @@ vec3 calculatePointLight(PointLight l){
 	float spec = pow(max(dot(viewDir, reflectDir), 0.0), material.shine);
 	vec3 specular = texture(material.specular, texCoord).rgb * spec * l.specular;
 
-	vec3 emmision = vec3(0.0);
-		
-	emmision = texture(material.emmision, texCoord).rgb*emmisionColor;
-
 	float d = length(l.position - fragPos);
 	float attenuation = 1.0/(l.constant + l.linear*d + l.quadratic*d*d);
 	
@@ -71,7 +78,7 @@ vec3 calculatePointLight(PointLight l){
 	diffuse*=attenuation;
 	specular*=attenuation;
 
-	return (ambient + diffuse + specular + emmision);
+	return (ambient + diffuse + specular);
 }
 
 vec3 calculateDirectionalLight(DirLight l){
@@ -91,12 +98,37 @@ vec3 calculateDirectionalLight(DirLight l){
 	//a dot product between the reflected light direction around the normal and the vector of the view direction
 	float spec = pow(max(dot(viewDir, reflectDir), 0.0), material.shine);
 	vec3 specular = texture(material.specular, texCoord).rgb * spec * l.specular;
-
-	vec3 emmision = vec3(0.0);
-		
-	emmision = texture(material.emmision, texCoord).rgb*emmisionColor;
 	
-	return (ambient + diffuse + specular + emmision);
+	return (ambient + diffuse + specular);
+}
+
+vec3 calculateSpotLight(SpotLight l){
+	vec3 ambient = vec3(0.0);
+	vec3 diffuse = vec3(0.0);;
+	vec3 specular = vec3(0.0);;
+
+	vec3 norm = normalize(normal);
+	vec3 lightDir = normalize(l.position - fragPos);
+
+	//the cosine of the angle of the light ray relative to the light facing direction
+	float theta = dot(lightDir, normalize(-l.direction));
+	if(theta > l.cutoff){
+		ambient = vec3(texture(material.diffuse, texCoord)) * l.ambient;
+
+		//a dot product between the light direction and the normal of the surface
+		float diff = max(dot(norm, lightDir),0.0);
+		diffuse = diff*l.diffuse*vec3(texture(material.diffuse, texCoord));
+
+		//need to review the math on this part
+		vec3 viewDir = normalize(cameraPos - fragPos);
+		vec3 reflectDir = reflect(-lightDir, norm);
+
+		//a dot product between the reflected light direction around the normal and the vector of the view direction
+		float spec = pow(max(dot(viewDir, reflectDir), 0.0), material.shine);
+		specular = texture(material.specular, texCoord).rgb * spec * l.specular;
+	}
+
+	return (ambient + diffuse + specular);
 }
 
 void main(){
@@ -105,6 +137,11 @@ void main(){
 	finalLightColor += calculateDirectionalLight(dLight);
 	finalLightColor += calculatePointLight(pLight);
 	finalLightColor += calculatePointLight(pLight2);
+	finalLightColor += calculateSpotLight(sLight);
+
+	vec3 emmision = texture(material.emmision, texCoord).rgb*emmisionColor;
+
+	finalLightColor += emmision;
 
 	fragColor = vec4(finalLightColor, 1.0);
 }
