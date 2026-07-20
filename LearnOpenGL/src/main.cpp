@@ -65,6 +65,8 @@ Material cubeMaterial{
 	32
 };
 
+glm::vec3 emmisionColor{0.0f, 0.2f, 0.0f};
+
 //shader source paths
 #ifdef DEBUG
 	std::string SHADER_SOURCE_PATH = "src/shaders/";
@@ -117,61 +119,7 @@ bool mouseEnabled = true;
 bool shouldExit = false;
 
 //sphere stuff
-void createSphere(int sectorCount, int stackCount, float radius, glm::vec3 origin, std::vector<float>& vertices, std::vector<unsigned int>& indices) {
-	float sectorStep = 2 * (float)M_PI / (float)sectorCount;
-	float stackStep = (float)M_PI / (float)stackCount;
-
-	float sectorAngle = 0.0;
-	float stackAngle =  -(float)M_PI_2;
-	for (int i = 0; i <= stackCount; ++i) {
-		sectorAngle = 0.0f;
-		for (int j = 0; j <= sectorCount; ++j) {
-			float x = cos(stackAngle) * sin(sectorAngle) * radius + origin.x;
-			float y = sin(stackAngle)                    * radius + origin.y;
-			float z = cos(stackAngle) * cos(sectorAngle) * radius + origin.z;
-			
-			vertices.push_back(x);
-			vertices.push_back(y);
-			vertices.push_back(z);
-
-			//normals
-			glm::vec3 normal = glm::normalize(glm::vec3(x,y,z) - origin);
-			vertices.push_back(normal.x);
-			vertices.push_back(normal.y);
-			vertices.push_back(normal.z);
-
-			//texture
-			float tx = (float)j / sectorCount;
-			float ty = (float)i / stackCount;
-			vertices.push_back(tx);
-			vertices.push_back(ty);
-
-			sectorAngle += sectorStep;
-		}
-		stackAngle += stackStep;
-	}
-
-	//i need to understand this part more
-	for (int i = 0; i < stackCount; ++i) {
-		int k1 = i * (sectorCount + 1);
-		int k2 = k1 + sectorCount + 1;
-		for (int j = 0; j < sectorCount; ++j, ++k1, ++k2) {
-			//exclude first sector 
-			if (i != 0) {
-				indices.push_back(k1);
-				indices.push_back(k2);
-				indices.push_back(k1 + 1);
-			}
-
-			//exclude last sector
-			if (i != sectorCount - 1) {
-				indices.push_back(k1 + 1);
-				indices.push_back(k2);
-				indices.push_back(k2 + 1);
-			}
-		}
-	}
-}
+void createSphere(int sectorCount, int stackCount, float radius, glm::vec3 origin, std::vector<float>& vertices, std::vector<unsigned int>& indices);
 
 int main() {
 	
@@ -200,6 +148,9 @@ int main() {
 	Texture texture2((ASSETS_PATH + "textures/urara_ballin.png").c_str());
 	Texture globeTexture((ASSETS_PATH + "textures/globe.png").c_str());
 	Texture perlin((ASSETS_PATH + "textures/perlin_noise.png").c_str());
+	Texture containerTexture((ASSETS_PATH + "textures/container.png").c_str());
+	Texture containerSpecular((ASSETS_PATH + "textures/container_specular.png").c_str());
+	Texture containerEmmision((ASSETS_PATH + "textures/wood_emmision.png").c_str());
 
 	//---------------------------------------------------------------------------------
 
@@ -210,8 +161,70 @@ int main() {
 	std::vector<float> sphereVertices;
 	std::vector<unsigned int> sphereIndices;
 
-	ModelLoader ml;
-	ml.loadOBJ((ASSETS_PATH + "models/cube.obj").c_str(), cubeVertices, cubeIndices);
+	cubeVertices = {
+		//positions         //normals          //texture coordinates
+		//back
+		 0.5f,-0.5f,-0.5f,  0.0f, 0.0f,-1.0f,  0.0f,0.0f,
+		-0.5f,-0.5f,-0.5f,  0.0f, 0.0f,-1.0f,  1.0f,0.0f,
+		-0.5f, 0.5f,-0.5f,  0.0f, 0.0f,-1.0f,  1.0f,1.0f,
+		 0.5f, 0.5f,-0.5f,  0.0f, 0.0f,-1.0f,  0.0f,1.0f,
+
+	    //front
+	    -0.5f,-0.5f, 0.5f,  0.0f, 0.0f, 1.0f,  0.0f,0.0f,
+		 0.5f,-0.5f, 0.5f,  0.0f, 0.0f, 1.0f,  1.0f,0.0f,
+		 0.5f, 0.5f, 0.5f,  0.0f, 0.0f, 1.0f,  1.0f,1.0f,
+		-0.5f, 0.5f, 0.5f,  0.0f, 0.0f, 1.0f,  0.0f,1.0f,
+	   
+	    //left
+	    -0.5f,-0.5f,-0.5f, -1.0f, 0.0f, 0.0f,  0.0f,0.0f,
+		-0.5f,-0.5f, 0.5f, -1.0f, 0.0f, 0.0f,  1.0f,0.0f,
+		-0.5f, 0.5f, 0.5f, -1.0f, 0.0f, 0.0f,  1.0f,1.0f,
+		-0.5f, 0.5f,-0.5f, -1.0f, 0.0f, 0.0f,  0.0f,1.0f,
+	   
+	    //right
+	     0.5f,-0.5f, 0.5f,  1.0f, 0.0f, 0.0f,  0.0f,0.0f,
+		 0.5f,-0.5f,-0.5f,  1.0f, 0.0f, 0.0f,  1.0f,0.0f,
+		 0.5f, 0.5f,-0.5f,  1.0f, 0.0f, 0.0f,  1.0f,1.0f,
+		 0.5f, 0.5f, 0.5f,  1.0f, 0.0f, 0.0f,  0.0f,1.0f,
+	   
+	    //bottom
+	     0.5f,-0.5f, 0.5f,  0.0f,-1.0f, 0.0f,  0.0f,0.0f,
+		-0.5f,-0.5f, 0.5f,  0.0f,-1.0f, 0.0f,  1.0f,0.0f,
+		-0.5f,-0.5f,-0.5f,  0.0f,-1.0f, 0.0f,  1.0f,1.0f,
+		 0.5f,-0.5f,-0.5f,  0.0f,-1.0f, 0.0f,  0.0f,1.0f,
+	   
+	     //top
+	    -0.5f, 0.5f, 0.5f,  0.0f, 1.0f, 0.0f,  0.0f,0.0f,
+		 0.5f, 0.5f, 0.5f,  0.0f, 1.0f, 0.0f,  1.0f,0.0f,
+		 0.5f, 0.5f,-0.5f,  0.0f, 1.0f, 0.0f,  1.0f,1.0f,
+		-0.5f, 0.5f,-0.5f,  0.0f, 1.0f, 0.0f,  0.0f,1.0f,
+	};
+
+	cubeIndices = {
+		//back
+		0, 1, 2,
+		2, 3, 0,
+
+		//front
+		4, 5, 6,
+		6, 7, 4,
+
+		//left
+		8, 9, 10,
+		10, 11, 8,
+
+		//right
+		12, 13, 14,
+		14, 15, 12,
+
+		//bottom
+		16, 17, 18,
+		18, 19, 16,
+
+		//top
+		20, 21, 22,
+		22, 23, 20,
+	};
 
 	createSphere(20, 20, 1.0f, glm::vec3(0.0f, 0.0f, 0.0f), sphereVertices, sphereIndices);
 
@@ -219,8 +232,19 @@ int main() {
 	Shape cube(cubeVertices, cubeIndices);
 	cube.create(PosNormTex3d, GL_STATIC_DRAW);
 
+	//texture
+	cubeShader.use();
+	cubeShader.setUniformi("material.diffuse", 0);
+	cubeShader.setUniformi("material.specular", 1);
+	cubeShader.setUniformi("material.emmision", 2);
+
+
 	Shape sphere(sphereVertices, sphereIndices);
 	sphere.create(PosNormTex3d, GL_STATIC_DRAW);
+
+	//texture
+	sphereShader.use();
+	sphereShader.setUniformi("lightMap", 0);
 
 	Shape lightBox(sphereVertices, sphereIndices);
 	//reuse the cube's buffers since they are already sent to the gpu
@@ -289,7 +313,6 @@ int main() {
 		//model matrix: local -> world
 		glm::mat4 cubeModel(1.0f);
 		cubeModel = glm::translate(cubeModel, glm::vec3(0.0f, 0.0f, 0.0f));
-		cubeModel = glm::scale(cubeModel, glm::vec3(0.5f));
 		cubeShader.setUniformMat4("model", glm::value_ptr(cubeModel));
 
 		//view matrix: world -> view
@@ -308,50 +331,17 @@ int main() {
 		cubeShader.setUniformVec3("light.specular", light.specular);
 
 		//material
-		cubeShader.setUniformVec3("material.ambient", cubeMaterial.ambient);
-		cubeShader.setUniformVec3("material.diffuse", cubeMaterial.diffuse);
-		cubeShader.setUniformVec3("material.specular", cubeMaterial.specular);
 		cubeShader.setUniformi("material.shine", cubeMaterial.shine);
-		
+		cubeShader.setUniformVec3("emmisionColor", emmisionColor);
+
 		cubeShader.setUniformVec3("cameraPos", camera.Position);
+		cubeShader.setUniformf("time", (float)glfwGetTime());
 
-		//cube.draw(GL_TRIANGLES);
+		containerTexture.setUnit(0);
+		containerSpecular.setUnit(1);
+		containerEmmision.setUnit(2);
 
-		//------------ SPHERE
-		sphereShader.use();
-		glm::mat4 sphereModel(1.0f);
-		sphereModel = glm::translate(sphereModel, glm::vec3(0.0f, 0.0f, 0.0f));
-		sphereShader.setUniformMat4("model", glm::value_ptr(sphereModel));
-
-		//view matrix: world -> view
-		glm::mat4 sphereView(1.0f);
-		sphereView = camera.getViewMatrix();
-		sphereShader.setUniformMat4("view", glm::value_ptr(sphereView));
-
-		//projection matrix: view -> clip
-		glm::mat4 sphereProjection = glm::perspective(glm::radians(camera.Zoom), (float)WIDTH / (float)HEIGHT, 0.1f, 100.0f);
-		sphereShader.setUniformMat4("projection", glm::value_ptr(sphereProjection));
-
-		//light properties
-		sphereShader.setUniformVec3("light.position", light.position);
-		sphereShader.setUniformVec3("light.ambient", light.ambient);
-		sphereShader.setUniformVec3("light.diffuse", light.diffuse);
-		sphereShader.setUniformVec3("light.specular", light.specular);
-
-		//material
-		//for now ill reuse the cube material
-		sphereShader.setUniformVec3("material.ambient", cubeMaterial.ambient);
-		sphereShader.setUniformVec3("material.diffuse", cubeMaterial.diffuse);
-		sphereShader.setUniformVec3("material.specular", cubeMaterial.specular);
-		sphereShader.setUniformi("material.shine", cubeMaterial.shine);
-
-		sphereShader.setUniformVec3("cameraPos", camera.Position);
-
-		//texture
-		sphereShader.setUniformi("lightMap", 0);
-		globeTexture.setUnit(0);
-
-		sphere.draw(GL_TRIANGLES);
+		cube.draw(GL_TRIANGLES);
 
 		//imgui
 		ImGui::Begin("Debug window");
@@ -369,9 +359,7 @@ int main() {
 		ImGui::SliderFloat("Light Orbit Speed", &lightOrbitSpeed, 0.0f, 5.0f);
 		//cube
 		ImGui::Text("Cube Properties");
-		ImGui::ColorEdit4("Cube Ambient Color", glm::value_ptr(cubeMaterial.ambient));
-		ImGui::ColorEdit4("Cube Diffuse Color", glm::value_ptr(cubeMaterial.diffuse));
-		ImGui::ColorEdit4("Cube Specular Color", glm::value_ptr(cubeMaterial.specular));
+		ImGui::ColorEdit3("Cube Emmision Color", glm::value_ptr(emmisionColor));
 		ImGui::SliderInt("Cube Shine", &cubeMaterial.shine, 0, 256);
 		ImGui::End();
 		ImGui::Render();
@@ -537,4 +525,60 @@ void setGLFWEventCallbacks(GLFWwindow* window) {
 	glfwSetCursorPosCallback(window, onCursorMove);
 	glfwSetScrollCallback(window, onMouseScroll);
 	glfwSetErrorCallback(glfwErrorCallback);
+}
+
+void createSphere(int sectorCount, int stackCount, float radius, glm::vec3 origin, std::vector<float>& vertices, std::vector<unsigned int>& indices) {
+	float sectorStep = 2 * (float)M_PI / (float)sectorCount;
+	float stackStep = (float)M_PI / (float)stackCount;
+
+	float sectorAngle = 0.0;
+	float stackAngle = -(float)M_PI_2;
+	for (int i = 0; i <= stackCount; ++i) {
+		sectorAngle = 0.0f;
+		for (int j = 0; j <= sectorCount; ++j) {
+			float x = cos(stackAngle) * sin(sectorAngle) * radius + origin.x;
+			float y = sin(stackAngle) * radius + origin.y;
+			float z = cos(stackAngle) * cos(sectorAngle) * radius + origin.z;
+
+			vertices.push_back(x);
+			vertices.push_back(y);
+			vertices.push_back(z);
+
+			//normals
+			glm::vec3 normal = glm::normalize(glm::vec3(x, y, z) - origin);
+			vertices.push_back(normal.x);
+			vertices.push_back(normal.y);
+			vertices.push_back(normal.z);
+
+			//texture
+			float tx = (float)j / sectorCount;
+			float ty = (float)i / stackCount;
+			vertices.push_back(tx);
+			vertices.push_back(ty);
+
+			sectorAngle += sectorStep;
+		}
+		stackAngle += stackStep;
+	}
+
+	//i need to understand this part more
+	for (int i = 0; i < stackCount; ++i) {
+		int k1 = i * (sectorCount + 1);
+		int k2 = k1 + sectorCount + 1;
+		for (int j = 0; j < sectorCount; ++j, ++k1, ++k2) {
+			//exclude first sector 
+			if (i != 0) {
+				indices.push_back(k1);
+				indices.push_back(k2);
+				indices.push_back(k1 + 1);
+			}
+
+			//exclude last sector
+			if (i != sectorCount - 1) {
+				indices.push_back(k1 + 1);
+				indices.push_back(k2);
+				indices.push_back(k2 + 1);
+			}
+		}
+	}
 }
