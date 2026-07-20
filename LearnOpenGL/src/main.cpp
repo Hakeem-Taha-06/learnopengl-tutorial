@@ -39,8 +39,15 @@ struct Material {
 };
 
 //TODO: light class
-struct Light {
+struct PointLight {
 	glm::vec3 position;
+	glm::vec3 ambient;
+	glm::vec3 diffuse;
+	glm::vec3 specular;
+};
+
+struct DirLight {
+	glm::vec3 direction;
 	glm::vec3 ambient;
 	glm::vec3 diffuse;
 	glm::vec3 specular;
@@ -63,6 +70,21 @@ Material cubeMaterial{
 	{0.5f, 0.5f, 0.5f},
 	{0.5f, 0.5f, 0.5f},
 	32
+};
+
+//light
+PointLight pLight{
+	{1.0f, 1.0f, 1.0f},
+	{0.2f, 0.2f, 0.2f},
+	{0.5f, 0.5f, 0.5f},
+	{1.0f, 1.0f, 1.0f}
+};
+
+DirLight dLight{
+	{0.2f, -1.0f, 0.2f},
+	{0.2f, 0.2f, 0.2f},
+	{0.5f, 0.5f, 0.5f},
+	{1.0f, 1.0f, 1.0f}
 };
 
 glm::vec3 emmisionColor{0.0f, 0.2f, 0.0f};
@@ -97,13 +119,6 @@ float FOV = 45.0f;
 //camera 
 Camera camera{glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 1.0f, 0.0f) ,-30.0f, -135.0f, 3.0f};
 
-//light
-Light light{
-	{1.0f, 1.0f, 1.0f},
-	{0.2f, 0.2f, 0.2f},
-	{0.5f, 0.5f, 0.5f},
-	{1.0f, 1.0f, 1.0f}
-};
 float lightOrbitRadius = 1.0f;
 float lightOrbitSpeed = 1.0f;
 
@@ -149,7 +164,7 @@ int main() {
 	Texture globeTexture((ASSETS_PATH + "textures/globe.png").c_str());
 	Texture perlin((ASSETS_PATH + "textures/perlin_noise.png").c_str());
 	Texture containerTexture((ASSETS_PATH + "textures/container.png").c_str());
-	Texture containerSpecular((ASSETS_PATH + "textures/container_specular.png").c_str());
+	Texture containerSpecular((ASSETS_PATH + "textures/container_specular_improved.png").c_str());
 	Texture containerEmmision((ASSETS_PATH + "textures/wood_emmision.png").c_str());
 
 	//---------------------------------------------------------------------------------
@@ -252,6 +267,12 @@ int main() {
 	lightBox.setEBO(sphere.getEBO());
 	lightBox.create(PosNormTex3d, GL_STATIC_DRAW);
 
+	glm::vec3 cubePositions[100];
+	for (int i = 0; i < 10; ++i) {
+		for(int j = 0; j <10; ++j){
+			cubePositions[i * 10 + j] = glm::vec3{i*1.0f, 0.0f, j*1.0f};
+		}
+	}
 
 	//for wireframe
 	//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
@@ -286,12 +307,12 @@ int main() {
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 		//------------- LIGHT
-		light.position.x = (float)std::cos(glfwGetTime() * lightOrbitSpeed) * lightOrbitRadius;
-		light.position.z = (float)std::sin(glfwGetTime() * lightOrbitSpeed) * lightOrbitRadius;
+		pLight.position.x = (float)std::cos(glfwGetTime() * lightOrbitSpeed) * lightOrbitRadius;
+		pLight.position.z = (float)std::sin(glfwGetTime() * lightOrbitSpeed) * lightOrbitRadius;
 
 		lightShader.use();
 		glm::mat4 lightModel = glm::mat4(1.0f);
-		lightModel = glm::translate(lightModel, light.position);
+		lightModel = glm::translate(lightModel, pLight.position);
 		lightModel = glm::scale(lightModel, glm::vec3(0.2f));
 		lightShader.setUniformMat4("model", glm::value_ptr(lightModel));
 		
@@ -303,8 +324,8 @@ int main() {
 		lightShader.setUniformMat4("projection", glm::value_ptr(lightProjection));
 
 		//normalizing doesn't really make sense here but it looks better for visualization so ill keep it
-		lightShader.setUniformVec3("color", glm::normalize(light.ambient+light.diffuse+light.specular));
-
+		lightShader.setUniformVec3("color", glm::normalize(pLight.ambient+pLight.diffuse+pLight.specular));
+		
 		lightBox.draw(GL_TRIANGLES);
 
 		//------------ CUBE
@@ -325,10 +346,15 @@ int main() {
 		cubeShader.setUniformMat4("projection", glm::value_ptr(cubeProjection));
 		
 		//light properties
-		cubeShader.setUniformVec3("light.position", light.position);
-		cubeShader.setUniformVec3("light.ambient", light.ambient);
-		cubeShader.setUniformVec3("light.diffuse", light.diffuse);
-		cubeShader.setUniformVec3("light.specular", light.specular);
+		cubeShader.setUniformVec3("pLight.position", pLight.position);
+		cubeShader.setUniformVec3("pLight.ambient", pLight.ambient);
+		cubeShader.setUniformVec3("pLight.diffuse", pLight.diffuse);
+		cubeShader.setUniformVec3("pLight.specular", pLight.specular);
+
+		cubeShader.setUniformVec3("dLight.direction", dLight.direction);
+		cubeShader.setUniformVec3("dLight.ambient", dLight.ambient);
+		cubeShader.setUniformVec3("dLight.diffuse", dLight.diffuse);
+		cubeShader.setUniformVec3("dLight.specular", dLight.specular);
 
 		//material
 		cubeShader.setUniformi("material.shine", cubeMaterial.shine);
@@ -340,9 +366,13 @@ int main() {
 		containerTexture.setUnit(0);
 		containerSpecular.setUnit(1);
 		containerEmmision.setUnit(2);
-
-		cube.draw(GL_TRIANGLES);
-
+		for (int i = 0; i < 100;++i) {
+			cubeModel = glm::mat4{ 1.0f };
+			cubeModel = glm::translate(cubeModel, cubePositions[i]);
+			cubeShader.setUniformMat4("model", glm::value_ptr(cubeModel));
+			cube.draw(GL_TRIANGLES);
+		}
+		
 		//imgui
 		ImGui::Begin("Debug window");
 		ImGui::Checkbox("Enable cursor", &mouseEnabled);
@@ -351,12 +381,18 @@ int main() {
 		ImGui::ColorEdit4("Background Color", glm::value_ptr(BGColor));
 		//light
 		ImGui::Text("Light Properties");
-		ImGui::SliderFloat3("Light Position", glm::value_ptr(light.position), -2.0f, 2.0f);
-		ImGui::ColorEdit4("Light Ambient Color", glm::value_ptr(light.ambient));
-		ImGui::ColorEdit4("Light Diffuse Color", glm::value_ptr(light.diffuse));
-		ImGui::ColorEdit4("Light Specular Color", glm::value_ptr(light.specular));
-		ImGui::SliderFloat("Light Orbit Radius", &lightOrbitRadius, 0.5f, 3.0f);
-		ImGui::SliderFloat("Light Orbit Speed", &lightOrbitSpeed, 0.0f, 5.0f);
+		ImGui::SliderFloat3("Point Light Position", glm::value_ptr(pLight.position), -2.0f, 2.0f);
+		ImGui::ColorEdit3("Point Light Ambient Color", glm::value_ptr(pLight.ambient));
+		ImGui::ColorEdit3("Point Light Diffuse Color", glm::value_ptr(pLight.diffuse));
+		ImGui::ColorEdit3("Point Light Specular Color", glm::value_ptr(pLight.specular));
+		ImGui::SliderFloat("Point Light Orbit Radius", &lightOrbitRadius, 0.5f, 3.0f);
+		ImGui::SliderFloat("Point Light Orbit Speed", &lightOrbitSpeed, 0.0f, 5.0f);
+
+		ImGui::SliderFloat3("Directional Light Direction", glm::value_ptr(dLight.direction), -10.0f, 10.0f);
+		ImGui::ColorEdit3("Direction Light Ambient Color", glm::value_ptr(dLight.ambient));
+		ImGui::ColorEdit3("Direction Light Diffuse Color", glm::value_ptr(dLight.diffuse));
+		ImGui::ColorEdit3("Direction Light Specular Color", glm::value_ptr(dLight.specular));
+		
 		//cube
 		ImGui::Text("Cube Properties");
 		ImGui::ColorEdit3("Cube Emmision Color", glm::value_ptr(emmisionColor));
