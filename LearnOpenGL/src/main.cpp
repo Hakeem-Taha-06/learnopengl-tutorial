@@ -44,6 +44,10 @@ struct PointLight {
 	glm::vec3 ambient;
 	glm::vec3 diffuse;
 	glm::vec3 specular;
+
+	float constant = 1.0f;
+	float linear = 0.7f;
+	float quadratic = 1.8f;
 };
 
 struct DirLight {
@@ -77,7 +81,16 @@ PointLight pLight{
 	{1.0f, 1.0f, 1.0f},
 	{0.2f, 0.2f, 0.2f},
 	{0.5f, 0.5f, 0.5f},
-	{1.0f, 1.0f, 1.0f}
+	{1.0f, 1.0f, 1.0f},
+	1.0f, 0.5f, 0.7f
+};
+
+PointLight pLight2{
+	{2.0f, 1.0f, 2.0f},
+	{0.2f, 0.2f, 0.2f},
+	{0.5f, 0.5f, 0.5f},
+	{1.0f, 1.0f, 1.0f},
+	1.0f, 0.5f, 0.7f
 };
 
 DirLight dLight{
@@ -328,6 +341,14 @@ int main() {
 		
 		lightBox.draw(GL_TRIANGLES);
 
+		lightShader.use();
+		lightModel = glm::mat4(1.0f);
+		lightModel = glm::translate(lightModel, pLight2.position);
+		lightModel = glm::scale(lightModel, glm::vec3(0.2f));
+		lightShader.setUniformMat4("model", glm::value_ptr(lightModel));
+
+		lightBox.draw(GL_TRIANGLES);
+
 		//------------ CUBE
 		cubeShader.use();
 		//coordinate transformation pipeline (MVP pipeline)
@@ -350,6 +371,17 @@ int main() {
 		cubeShader.setUniformVec3("pLight.ambient", pLight.ambient);
 		cubeShader.setUniformVec3("pLight.diffuse", pLight.diffuse);
 		cubeShader.setUniformVec3("pLight.specular", pLight.specular);
+		cubeShader.setUniformf("pLight.constant", pLight.constant);
+		cubeShader.setUniformf("pLight.linear", pLight.linear);
+		cubeShader.setUniformf("pLight.quadratic", pLight.quadratic);
+
+		cubeShader.setUniformVec3("pLight2.position", pLight2.position);
+		cubeShader.setUniformVec3("pLight2.ambient", pLight2.ambient);
+		cubeShader.setUniformVec3("pLight2.diffuse", pLight2.diffuse);
+		cubeShader.setUniformVec3("pLight2.specular", pLight2.specular);
+		cubeShader.setUniformf("pLight2.constant", pLight2.constant);
+		cubeShader.setUniformf("pLight2.linear", pLight2.linear);
+		cubeShader.setUniformf("pLight2.quadratic", pLight2.quadratic);
 
 		cubeShader.setUniformVec3("dLight.direction", dLight.direction);
 		cubeShader.setUniformVec3("dLight.ambient", dLight.ambient);
@@ -385,6 +417,7 @@ int main() {
 		ImGui::ColorEdit3("Point Light Ambient Color", glm::value_ptr(pLight.ambient));
 		ImGui::ColorEdit3("Point Light Diffuse Color", glm::value_ptr(pLight.diffuse));
 		ImGui::ColorEdit3("Point Light Specular Color", glm::value_ptr(pLight.specular));
+		ImGui::SliderFloat3("Point Light Attenuation Coefficients", &pLight.constant, 0.0f, 1.0f); //relies on structs being contiguous in memory
 		ImGui::SliderFloat("Point Light Orbit Radius", &lightOrbitRadius, 0.5f, 3.0f);
 		ImGui::SliderFloat("Point Light Orbit Speed", &lightOrbitSpeed, 0.0f, 5.0f);
 

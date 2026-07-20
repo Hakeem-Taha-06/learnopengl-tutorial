@@ -4,10 +4,8 @@ out vec4 fragColor;
 in vec3 normal;
 in vec3 fragPos;
 in vec2 texCoord;
-uniform vec3 color;//unused
+uniform vec3 color;
 
-
-//light stuff
 uniform vec3 cameraPos;
 
 struct PointLight{
@@ -15,6 +13,11 @@ struct PointLight{
 	vec3 ambient;
 	vec3 diffuse;
 	vec3 specular;
+
+	
+	float constant;
+	float linear;
+	float quadratic;
 };
 
 struct DirLight{
@@ -32,6 +35,7 @@ struct Material{
 };
 
 uniform PointLight pLight;
+uniform PointLight pLight2;
 uniform DirLight dLight;
 uniform Material material;
 uniform float time;
@@ -59,7 +63,14 @@ vec3 calculatePointLight(PointLight l){
 	vec3 emmision = vec3(0.0);
 		
 	emmision = texture(material.emmision, texCoord).rgb*emmisionColor;
+
+	float d = length(l.position - fragPos);
+	float attenuation = 1.0/(l.constant + l.linear*d + l.quadratic*d*d);
 	
+	ambient*=attenuation;
+	diffuse*=attenuation;
+	specular*=attenuation;
+
 	return (ambient + diffuse + specular + emmision);
 }
 
@@ -93,6 +104,7 @@ void main(){
 
 	finalLightColor += calculateDirectionalLight(dLight);
 	finalLightColor += calculatePointLight(pLight);
+	finalLightColor += calculatePointLight(pLight2);
 
 	fragColor = vec4(finalLightColor, 1.0);
 }
