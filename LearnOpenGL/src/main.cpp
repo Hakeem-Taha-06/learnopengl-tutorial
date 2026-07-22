@@ -141,7 +141,7 @@ SpotLight sLight{
 
 PointLight pLights[NUM_POINT_LIGHTS] = { PointLight{} };
 
-glm::vec3 emmisionColor{0.0f, 0.2f, 0.0f};
+glm::vec3 emmisionColor{0.0f, 0.0f, 0.0f};
 
 bool enableSpotlight = true;
 
@@ -604,11 +604,6 @@ GLFWwindow* Init() {
 }
 
 void processInput(GLFWwindow* window, float deltaTime) {
-	if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
-		//glfwSetWindowShouldClose(window, 1);
-		enterDebug();
-	}
-
 	//there's probably a better way to do this
 	if (glfwGetKey(window, GLFW_KEY_SLASH) == GLFW_PRESS) {
 		texInterp += 0.01f;
@@ -647,6 +642,14 @@ void OnWindowClose(GLFWwindow* window) {
 	glfwSetWindowShouldClose(window, 1);
 }
 
+void OnKeyEvent(GLFWwindow* window, int key, int scancode, int action, int mods) {
+	if (key == GLFW_KEY_L && action == GLFW_PRESS) 
+		enableSpotlight = !enableSpotlight;
+
+	if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
+		mouseEnabled = !mouseEnabled;
+}
+
 void onCursorMove(GLFWwindow* window, double xpos, double ypos) {
 
 	if (firstMouse) {
@@ -682,6 +685,7 @@ void setGLFWEventCallbacks(GLFWwindow* window) {
 	glfwSetWindowCloseCallback(window, OnWindowClose);
 	glfwSetCursorPosCallback(window, onCursorMove);
 	glfwSetScrollCallback(window, onMouseScroll);
+	glfwSetKeyCallback(window, OnKeyEvent);
 	glfwSetErrorCallback(glfwErrorCallback);
 }
 
