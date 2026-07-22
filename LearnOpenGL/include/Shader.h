@@ -35,10 +35,10 @@ public:
 	void setUniformui(const char* name, unsigned int v1, unsigned int v2, unsigned int v3, unsigned int v4) const;
 
 	//matrix uniform
-	void setUniformMat4(const char* name, const float* matrix);
+	void setUniformMat4(const char* name, const float* matrix) const;
 
 	//specific vector uniforms (same as float but easier to input)
-	void setUniformVec3(const char* name, glm::vec3 v);
+	void setUniformVec3(const char* name, glm::vec3 v) const;
 
 private:
 	std::string _readFile(const char* path);
@@ -183,11 +183,11 @@ void Shader::setUniformui(const char* name, unsigned int v1, unsigned int v2, un
 }
 
 //matrix uniform
-void Shader::setUniformMat4(const char* name, const float* matrix) {
+void Shader::setUniformMat4(const char* name, const float* matrix) const {
 	glUniformMatrix4fv(glGetUniformLocation(m_ID, name), 1, GL_FALSE, matrix);
 }
 
 //specific vector uniforms (same as float but easier to input)
-void Shader::setUniformVec3(const char* name, glm::vec3 v) {
+void Shader::setUniformVec3(const char* name, glm::vec3 v) const {
 	glUniform3f(glGetUniformLocation(m_ID, name), v.x, v.y, v.z);
 }

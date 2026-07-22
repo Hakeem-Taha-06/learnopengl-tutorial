@@ -30,9 +30,6 @@
     <ClInclude Include="include\Texture.h">
       <Filter>include</Filter>
     </ClInclude>
-    <ClInclude Include="include\claude_OBJ.h">
-      <Filter>include</Filter>
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="dependencies\src\glad.c">

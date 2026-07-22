@@ -4,9 +4,6 @@ out vec4 fragColor;
 in vec3 normal;
 in vec3 fragPos;
 in vec2 texCoord;
-uniform vec3 color;
-
-uniform vec3 cameraPos;
 
 struct PointLight{
 	vec3 position;
@@ -14,10 +11,11 @@ struct PointLight{
 	vec3 diffuse;
 	vec3 specular;
 
-	
 	float constant;
 	float linear;
 	float quadratic;
+
+	bool enabled;
 };
 
 struct DirLight{
@@ -48,15 +46,42 @@ struct Material{
 	int shine;
 };
 
-uniform PointLight pLight;
-uniform PointLight pLight2;
+#define NUM_POINT_LIGHTS 4
+
+uniform PointLight pLights[NUM_POINT_LIGHTS];
 uniform DirLight dLight;
 uniform SpotLight sLight;
 uniform Material material;
 uniform float time;
 uniform vec3 emmisionColor;
+uniform vec3 cameraPos;
+uniform bool enableSpotlight;
+
+vec3 calculatePointLight(PointLight l);
+vec3 calculateDirectionalLight(DirLight l);
+vec3 calculateSpotLight(SpotLight l);
+
+void main(){
+	vec3 finalLightColor = vec3(0.0);
+
+	finalLightColor += calculateDirectionalLight(dLight);
+
+	for(int i = 0; i < NUM_POINT_LIGHTS; ++i)
+		if(pLights[i].enabled) finalLightColor += calculatePointLight(pLights[i]);
+	
+	if(enableSpotlight)
+		finalLightColor += calculateSpotLight(sLight);
+
+	vec3 emmision = texture(material.emmision, texCoord).rgb*emmisionColor;
+
+	finalLightColor += emmision;
+
+	fragColor = vec4(finalLightColor, 1.0);
+}
+
 
 vec3 calculatePointLight(PointLight l){
+	if(!l.enabled) return vec3(0.0);
 
 	vec3 ambient = vec3(texture(material.diffuse, texCoord)) * l.ambient;
 
@@ -144,19 +169,4 @@ vec3 calculateSpotLight(SpotLight l){
 	specular*=attenuation;
 
 	return (ambient + diffuse + specular);
-}
-
-void main(){
-	vec3 finalLightColor = vec3(0.0);
-
-	finalLightColor += calculateDirectionalLight(dLight);
-	finalLightColor += calculatePointLight(pLight);
-	finalLightColor += calculatePointLight(pLight2);
-	finalLightColor += calculateSpotLight(sLight);
-
-	vec3 emmision = texture(material.emmision, texCoord).rgb*emmisionColor;
-
-	finalLightColor += emmision;
-
-	fragColor = vec4(finalLightColor, 1.0);
 }

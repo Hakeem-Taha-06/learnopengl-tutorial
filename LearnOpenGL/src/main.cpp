@@ -30,6 +30,19 @@
 #include "Camera.h"
 #include "ModelLoader.h"
 
+//shader source paths
+#ifdef DEBUG
+	std::string SHADER_SOURCE_PATH = "src/shaders/";
+	std::string ASSETS_PATH = "src/assets/";
+#else
+	#ifdef RELEASE
+		std::string SHADER_SOURCE_PATH = "shaders/";
+		std::string ASSETS_PATH = "assets/";
+	#endif
+#endif
+
+#define NUM_POINT_LIGHTS 4
+
 //TODO: material class
 struct Material {
 	glm::vec3 ambient;
@@ -40,32 +53,34 @@ struct Material {
 
 //TODO: light class
 struct PointLight { //light from a single point, decreases intensity over distance
-	glm::vec3 position;
-	glm::vec3 ambient;
-	glm::vec3 diffuse;
-	glm::vec3 specular;
+	glm::vec3 position = glm::vec3(0.0f, 0.0f, 0.0f);
+	glm::vec3 ambient =  glm::vec3(0.0f, 0.0f, 0.0f);
+	glm::vec3 diffuse =  glm::vec3(0.5f, 0.5f, 0.5f);
+	glm::vec3 specular = glm::vec3(1.0f, 1.0f, 1.0f);
 
 	float constant = 1.0f;
-	float linear = 0.7f;
-	float quadratic = 1.8f;
+	float linear = 0.09f;
+	float quadratic = 0.032f;
+
+	bool enabled = false;
 };
 
 struct DirLight { //constant light in certain direction, position acts like infinity
-	glm::vec3 direction;
-	glm::vec3 ambient;
-	glm::vec3 diffuse;
-	glm::vec3 specular;
+	glm::vec3 direction = glm::vec3(0.0f, -1.0f, 0.0f);
+	glm::vec3 ambient =   glm::vec3(0.0f, 0.0f, 0.0f);
+	glm::vec3 diffuse =   glm::vec3(0.5f, 0.5f, 0.5f);
+	glm::vec3 specular =  glm::vec3(1.0f, 1.0f, 1.0f);
 };
 
 struct SpotLight { //mix, position + direction
-	glm::vec3 position;
-	glm::vec3 direction;
-	glm::vec3 ambient;
-	glm::vec3 diffuse;
-	glm::vec3 specular;
+	glm::vec3 position =  glm::vec3(0.0f, 0.0f, 0.0f);
+	glm::vec3 direction = glm::vec3(0.0f, -1.0f, 0.0f);
+	glm::vec3 ambient =   glm::vec3(0.0f, 0.0f, 0.0f);
+	glm::vec3 diffuse =   glm::vec3(0.5f, 0.5f, 0.5f);
+	glm::vec3 specular =  glm::vec3(1.0f, 1.0f, 1.0f);
 
-	float cutoff;
-	float outerCutoff;
+	float cutoff = 12.5f;
+	float outerCutoff = 15.0f;
 	float constant = 1.0f;
 	float linear = 0.7f;
 	float quadratic = 1.8f;
@@ -109,8 +124,8 @@ PointLight pLight2{
 
 DirLight dLight{
 	{0.2f, -1.0f, 0.2f},
-	{0.2f, 0.2f, 0.2f},
-	{0.5f, 0.5f, 0.5f},
+	{0.0f, 0.0f, 0.0f},
+	{0.0f, 0.0f, 0.0f},
 	{1.0f, 1.0f, 1.0f}
 };
 
@@ -124,18 +139,11 @@ SpotLight sLight{
 	1.0f, 0.045f, 0.0075f
 };
 
+PointLight pLights[NUM_POINT_LIGHTS] = { PointLight{} };
+
 glm::vec3 emmisionColor{0.0f, 0.2f, 0.0f};
 
-//shader source paths
-#ifdef DEBUG
-	std::string SHADER_SOURCE_PATH = "src/shaders/";
-	std::string ASSETS_PATH = "src/assets/";
-#else
-	#ifdef RELEASE
-		std::string SHADER_SOURCE_PATH = "shaders/";
-		std::string ASSETS_PATH = "assets/";
-	#endif
-#endif
+bool enableSpotlight = true;
 
 //event callbacks
 void OnFrameBufferResize(GLFWwindow* window, int width, int height);
@@ -155,9 +163,6 @@ float FOV = 45.0f;
 
 //camera 
 Camera camera{glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 1.0f, 0.0f) ,-30.0f, -135.0f, 3.0f};
-
-float lightOrbitRadius = 1.0f;
-float lightOrbitSpeed = 1.0f;
 
 //cursor properties
 double mouseLastX = WIDTH / 2, mouseLastY = HEIGHT / 2;
@@ -299,17 +304,22 @@ int main() {
 	sphereShader.setUniformi("lightMap", 0);
 
 	Shape lightBox(sphereVertices, sphereIndices);
-	//reuse the cube's buffers since they are already sent to the gpu
+	//reuse the sphere's buffers since they are already sent to the gpu
 	lightBox.setVBO(sphere.getVBO());
 	lightBox.setEBO(sphere.getEBO());
 	lightBox.create(PosNormTex3d, GL_STATIC_DRAW);
 
-	glm::vec3 cubePositions[100];
+	glm::vec3 cubePositions[100] = {glm::vec3()};
 	for (int i = 0; i < 10; ++i) {
 		for(int j = 0; j <10; ++j){
 			cubePositions[i * 10 + j] = glm::vec3{i*1.0f, 0.0f, j*1.0f};
 		}
 	}
+
+	pLights[0].position = glm::vec3(0.0f, 1.0f, 0.0f); pLights[0].enabled = true;
+	pLights[1].position = glm::vec3(9.0f, 1.0f, 0.0f); pLights[1].enabled = true;
+	pLights[2].position = glm::vec3(0.0f, 1.0f, 9.0f); pLights[2].enabled = true;
+	pLights[3].position = glm::vec3(9.0f, 1.0f, 9.0f); pLights[3].enabled = true;
 
 	//for wireframe
 	//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
@@ -344,34 +354,26 @@ int main() {
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 		//------------- LIGHT
-		pLight.position.x = (float)std::cos(glfwGetTime() * lightOrbitSpeed) * lightOrbitRadius;
-		pLight.position.z = (float)std::sin(glfwGetTime() * lightOrbitSpeed) * lightOrbitRadius;
-
 		lightShader.use();
-		glm::mat4 lightModel = glm::mat4(1.0f);
-		lightModel = glm::translate(lightModel, pLight.position);
-		lightModel = glm::scale(lightModel, glm::vec3(0.2f));
-		lightShader.setUniformMat4("model", glm::value_ptr(lightModel));
-		
-		glm::mat4 lightView = glm::mat4(1.0f);
+
+		glm::mat4 lightView{ 1.0 };
 		lightView = camera.getViewMatrix();
 		lightShader.setUniformMat4("view", glm::value_ptr(lightView));
 
 		glm::mat4 lightProjection = glm::perspective(glm::radians(camera.Zoom), (float)WIDTH / (float)HEIGHT, 0.1f, 100.0f);
 		lightShader.setUniformMat4("projection", glm::value_ptr(lightProjection));
 
-		//normalizing doesn't really make sense here but it looks better for visualization so ill keep it
-		lightShader.setUniformVec3("color", glm::normalize(pLight.ambient+pLight.diffuse+pLight.specular));
-		
-		lightBox.draw(GL_TRIANGLES);
+		for (int i = 0; i < NUM_POINT_LIGHTS; ++i){
+			if (!pLights[i].enabled) continue;
+			glm::mat4 model{ 1.0 };
+			model = glm::translate(model, pLights[i].position);
+			model = glm::scale(model, glm::vec3(0.2f));
+			lightShader.setUniformMat4("model", glm::value_ptr(model));
 
-		lightShader.use();
-		lightModel = glm::mat4(1.0f);
-		lightModel = glm::translate(lightModel, pLight2.position);
-		lightModel = glm::scale(lightModel, glm::vec3(0.2f));
-		lightShader.setUniformMat4("model", glm::value_ptr(lightModel));
+			lightShader.setUniformVec3("color", glm::normalize(pLights[i].ambient + pLights[i].diffuse + pLights[i].specular));
 
-		lightBox.draw(GL_TRIANGLES);
+			lightBox.draw(GL_TRIANGLES);
+		}
 
 		//------------ CUBE
 		cubeShader.use();
@@ -392,22 +394,6 @@ int main() {
 		
 		//light properties
 		//can be wrapped in an apply#Light(#Light) function
-		cubeShader.setUniformVec3("pLight.position", pLight.position);
-		cubeShader.setUniformVec3("pLight.ambient", pLight.ambient);
-		cubeShader.setUniformVec3("pLight.diffuse", pLight.diffuse);
-		cubeShader.setUniformVec3("pLight.specular", pLight.specular);
-		cubeShader.setUniformf("pLight.constant", pLight.constant);
-		cubeShader.setUniformf("pLight.linear", pLight.linear);
-		cubeShader.setUniformf("pLight.quadratic", pLight.quadratic);
-
-		cubeShader.setUniformVec3("pLight2.position", pLight2.position);
-		cubeShader.setUniformVec3("pLight2.ambient", pLight2.ambient);
-		cubeShader.setUniformVec3("pLight2.diffuse", pLight2.diffuse);
-		cubeShader.setUniformVec3("pLight2.specular", pLight2.specular);
-		cubeShader.setUniformf("pLight2.constant", pLight2.constant);
-		cubeShader.setUniformf("pLight2.linear", pLight2.linear);
-		cubeShader.setUniformf("pLight2.quadratic", pLight2.quadratic);
-
 		cubeShader.setUniformVec3("dLight.direction", dLight.direction);
 		cubeShader.setUniformVec3("dLight.ambient", dLight.ambient);
 		cubeShader.setUniformVec3("dLight.diffuse", dLight.diffuse);
@@ -424,12 +410,26 @@ int main() {
 		cubeShader.setUniformf("sLight.linear", sLight.linear);
 		cubeShader.setUniformf("sLight.quadratic", sLight.quadratic);
 
+		for (int i = 0; i < NUM_POINT_LIGHTS; ++i) {
+			std::string currentLight = "pLights[" + std::to_string(i) + "]";
+
+			cubeShader.setUniformVec3((currentLight + ".position").c_str(), pLights[i].position);
+			cubeShader.setUniformVec3((currentLight + ".ambient").c_str(), pLights[i].ambient);
+			cubeShader.setUniformVec3((currentLight + ".diffuse").c_str(), pLights[i].diffuse);
+			cubeShader.setUniformVec3((currentLight + ".specular").c_str(), pLights[i].specular);
+			cubeShader.setUniformf((currentLight + ".constant").c_str(), pLights[i].constant);
+			cubeShader.setUniformf((currentLight + ".linear").c_str(), pLights[i].linear);
+			cubeShader.setUniformf((currentLight + ".quadratic").c_str(), pLights[i].quadratic);
+			cubeShader.setUniformi((currentLight + ".enabled").c_str(), pLights[i].enabled);
+		}
+
 		//material
 		cubeShader.setUniformi("material.shine", cubeMaterial.shine);
 		cubeShader.setUniformVec3("emmisionColor", emmisionColor);
 
 		cubeShader.setUniformVec3("cameraPos", camera.Position);
 		cubeShader.setUniformf("time", (float)glfwGetTime());
+		cubeShader.setUniformi("enableSpotlight", enableSpotlight);
 
 		containerTexture.setUnit(0);
 		containerSpecular.setUnit(1);
@@ -448,27 +448,77 @@ int main() {
 			glfwSetWindowShouldClose(window, 1);
 		ImGui::ColorEdit4("Background Color", glm::value_ptr(BGColor));
 		//light
-		ImGui::Text("Light Properties");
-		ImGui::SliderFloat3("Point Light Position", glm::value_ptr(pLight.position), -2.0f, 2.0f);
-		ImGui::ColorEdit3("Point Light Ambient Color", glm::value_ptr(pLight.ambient));
-		ImGui::ColorEdit3("Point Light Diffuse Color", glm::value_ptr(pLight.diffuse));
-		ImGui::ColorEdit3("Point Light Specular Color", glm::value_ptr(pLight.specular));
-		ImGui::SliderFloat3("Point Light Attenuation Coefficients", &pLight.constant, 0.0f, 1.0f); //relies on structs being contiguous in memory
-		ImGui::SliderFloat("Point Light Orbit Radius", &lightOrbitRadius, 0.5f, 3.0f);
-		ImGui::SliderFloat("Point Light Orbit Speed", &lightOrbitSpeed, 0.0f, 5.0f);
+		if (ImGui::TreeNode("Light Properties")) {
+			for (int i = 0; i < NUM_POINT_LIGHTS; ++i) {
 
-		ImGui::SliderFloat("Spotlight Inner Cutoff", &sLight.cutoff, 10.0f, 20.0f);
-		ImGui::SliderFloat("Spotlight Outer Cutoff", &sLight.outerCutoff, 10.0f, 20.0f);
+				std::string lightLabel = "Point light " + std::to_string(i + 1);
 
-		ImGui::SliderFloat3("Directional Light Direction", glm::value_ptr(dLight.direction), -10.0f, 10.0f);
-		ImGui::ColorEdit3("Direction Light Ambient Color", glm::value_ptr(dLight.ambient));
-		ImGui::ColorEdit3("Direction Light Diffuse Color", glm::value_ptr(dLight.diffuse));
-		ImGui::ColorEdit3("Direction Light Specular Color", glm::value_ptr(dLight.specular));
-		
-		//cube
-		ImGui::Text("Cube Properties");
-		ImGui::ColorEdit3("Cube Emmision Color", glm::value_ptr(emmisionColor));
-		ImGui::SliderInt("Cube Shine", &cubeMaterial.shine, 0, 256);
+				if (ImGui::TreeNode(lightLabel.c_str())) {
+					ImGui::PushID(i);
+
+					ImGui::SliderFloat3("Position", glm::value_ptr(pLights[i].position), 0.0f, 10.0f);
+					ImGui::ColorEdit3("Ambient Color", glm::value_ptr(pLights[i].ambient));
+					ImGui::ColorEdit3("Diffuse Color", glm::value_ptr(pLights[i].diffuse));
+					ImGui::ColorEdit3("Specular Color", glm::value_ptr(pLights[i].specular));
+					
+					ImGui::Text("Attenuation Coefficients");
+					float itemWidth = ImGui::GetContentRegionAvail().x / 3.0f - ImGui::GetStyle().ItemSpacing.x;
+
+					ImGui::SetNextItemWidth(itemWidth);
+					ImGui::SameLine(); ImGui::SliderFloat("##Constant", &pLights[i].constant, 0.0f, 1.0f);
+
+					ImGui::SetNextItemWidth(itemWidth);
+					ImGui::SameLine(); ImGui::SliderFloat("##Linear", &pLights[i].linear, 0.0f, 1.0f);
+
+					ImGui::SetNextItemWidth(itemWidth);
+					ImGui::SameLine(); ImGui::SliderFloat("##Quadratic", &pLights[i].quadratic, 0.0f, 1.0f);
+
+					ImGui::PopID();
+					ImGui::TreePop();
+				}
+			}
+			
+			if (ImGui::TreeNode("Flashlight Properties")) {
+				ImGui::Checkbox("Enable Flashlight", &enableSpotlight);
+				ImGui::SliderFloat("Inner Cutoff", &sLight.cutoff, 10.0f, 20.0f);
+				ImGui::SliderFloat("Outer Cutoff", &sLight.outerCutoff, 10.0f, 20.0f);
+				ImGui::ColorEdit3("Ambient Color", glm::value_ptr(sLight.ambient));
+				ImGui::ColorEdit3("Diffuse Color", glm::value_ptr(sLight.diffuse));
+				ImGui::ColorEdit3("Specular Color", glm::value_ptr(sLight.specular));
+
+				ImGui::Text("Attenuation Coefficients");
+				float itemWidth = ImGui::GetContentRegionAvail().x / 3.0f - ImGui::GetStyle().ItemSpacing.x;
+
+				ImGui::SetNextItemWidth(itemWidth);
+				ImGui::SameLine(); ImGui::SliderFloat("##Constant", &sLight.constant, 0.0f, 1.0f);
+
+				ImGui::SetNextItemWidth(itemWidth);
+				ImGui::SameLine(); ImGui::SliderFloat("##Linear", &sLight.linear, 0.0f, 1.0f);
+
+				ImGui::SetNextItemWidth(itemWidth);
+				ImGui::SameLine(); ImGui::SliderFloat("##Quadratic", &sLight.quadratic, 0.0f, 1.0f);
+
+				ImGui::TreePop();
+			}
+			if (ImGui::TreeNode("Directional Light Properties")) {
+				ImGui::SliderFloat3("Direction", glm::value_ptr(dLight.direction), -10.0f, 10.0f);
+				ImGui::ColorEdit3("Ambient Color", glm::value_ptr(dLight.ambient));
+				ImGui::ColorEdit3("Diffuse Color", glm::value_ptr(dLight.diffuse));
+				ImGui::ColorEdit3("Specular Color", glm::value_ptr(dLight.specular));
+				
+				ImGui::TreePop();
+			}
+			ImGui::TreePop();
+		}
+
+		//cubes
+		if (ImGui::TreeNode("Cube Properties")) {
+			ImGui::ColorEdit3("Cube Emmision Color", glm::value_ptr(emmisionColor));
+			ImGui::SliderInt("Cube Shine", &cubeMaterial.shine, 0, 256);
+
+			ImGui::TreePop();
+		}
+
 		ImGui::End();
 		ImGui::Render();
 		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
