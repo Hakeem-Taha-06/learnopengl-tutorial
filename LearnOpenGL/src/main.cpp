@@ -465,7 +465,7 @@ int main() {
 					float itemWidth = ImGui::GetContentRegionAvail().x / 3.0f - ImGui::GetStyle().ItemSpacing.x;
 
 					ImGui::SetNextItemWidth(itemWidth);
-					ImGui::SameLine(); ImGui::SliderFloat("##Constant", &pLights[i].constant, 0.0f, 1.0f);
+					                   ImGui::SliderFloat("##Constant", &pLights[i].constant, 0.0f, 1.0f);
 
 					ImGui::SetNextItemWidth(itemWidth);
 					ImGui::SameLine(); ImGui::SliderFloat("##Linear", &pLights[i].linear, 0.0f, 1.0f);
@@ -490,7 +490,7 @@ int main() {
 				float itemWidth = ImGui::GetContentRegionAvail().x / 3.0f - ImGui::GetStyle().ItemSpacing.x;
 
 				ImGui::SetNextItemWidth(itemWidth);
-				ImGui::SameLine(); ImGui::SliderFloat("##Constant", &sLight.constant, 0.0f, 1.0f);
+				                   ImGui::SliderFloat("##Constant", &sLight.constant, 0.0f, 1.0f);
 
 				ImGui::SetNextItemWidth(itemWidth);
 				ImGui::SameLine(); ImGui::SliderFloat("##Linear", &sLight.linear, 0.0f, 1.0f);
